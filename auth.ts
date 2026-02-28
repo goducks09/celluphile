@@ -3,7 +3,7 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import client from '@/app/lib/db';
 import Credentials from 'next-auth/providers/credentials';
 import User from '@/app/models/user';
-import dbConnect from '@/app/lib/db';
+import dbConnect from '@/app/lib/mongoose';
 import bcrypt from 'bcryptjs';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -14,7 +14,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: 'Credentials',
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
-            return null;
+          return null;
         }
 
         await dbConnect();
@@ -45,17 +45,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     // This callback is used to customize the JWT token
     async jwt({ token, user }) {
-        if (user) {
-            token.id = user.id;
-        }
-        return token;
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     },
     // This callback is used to customize the session object
     async session({ session, token }) {
-        if (session.user) {
-            session.user.id = token.id as string;
-        }
-        return session;
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
     },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
