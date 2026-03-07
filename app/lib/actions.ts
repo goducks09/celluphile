@@ -80,11 +80,11 @@ const qualityEnum = z.enum(['Digital', 'Blu-ray', '4K', 'DVD']);
 
 const addMovieSchema = z.object({
     tmdbId: z.number().int().positive(),
-    title: z.string().min(1, 'Title is required'),
+    title: z.string().min(1, 'Title is required').max(255, 'Title cannot exceed 255 characters'),
     poster: z.string(),
     genre: z.array(z.string()),
     quality: qualityEnum,
-    customNotes: z.string().optional(),
+    customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
 });
 
 const movieIdSchema = z.number().int().positive();
@@ -144,7 +144,6 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         const newMovie = new Movie({
             userId: new Types.ObjectId(session.user.id),
             ...parsed.data,
-            addedAt: new Date(),
         });
 
         await newMovie.save();

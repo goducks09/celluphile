@@ -1,6 +1,6 @@
-import { Schema, model, models, Document, Types } from 'mongoose';
+import { Schema, model, models, Types, type HydratedDocument } from 'mongoose';
 
-export interface IMovie extends Document {
+export interface IMovie {
   userId: Types.ObjectId;
   tmdbId: number;
   title: string;
@@ -10,6 +10,8 @@ export interface IMovie extends Document {
   addedAt: Date;
   customNotes?: string;
 }
+
+export type IMovieDocument = HydratedDocument<IMovie>;
 
 const MovieSchema = new Schema<IMovie>({
   userId: {
@@ -24,14 +26,16 @@ const MovieSchema = new Schema<IMovie>({
   title: {
     type: String,
     required: true,
+    trim: true,
+    maxlength: 255,
   },
   poster: {
     type: String,
-    required: true,
+    default: '',
   },
   genre: {
     type: [String],
-    required: true,
+    default: [],
   },
   quality: {
     type: String,
@@ -44,6 +48,8 @@ const MovieSchema = new Schema<IMovie>({
   },
   customNotes: {
     type: String,
+    trim: true,
+    maxlength: 500,
   },
 });
 
@@ -52,6 +58,13 @@ MovieSchema.index({ userId: 1, tmdbId: 1 }, { unique: true });
 
 // Add text indexing for efficient local library search by title
 MovieSchema.index({ title: 'text' });
+
+// Compound indexes for optimal performance in searchUserLibrary
+// 1. Default sort: Most recent movies by user
+MovieSchema.index({ userId: 1, addedAt: -1 });
+
+// 2. Filter sort: Quality filter + newest sort
+MovieSchema.index({ userId: 1, quality: 1, addedAt: -1 });
 
 const Movie = models.Movie || model<IMovie>('Movie', MovieSchema);
 
