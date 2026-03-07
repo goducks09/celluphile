@@ -17,6 +17,10 @@ const UserSchema = new Schema({
   mfaSecret: {
     type: String,
   },
+  webPushSubscription: {
+    type: Object, // Stores the PushSubscription object { endpoint, keys: { p256dh, auth } }
+    default: null
+  }
 });
 
 const User = models.User || model('User', UserSchema);

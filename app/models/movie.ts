@@ -50,6 +50,9 @@ const MovieSchema = new Schema<IMovie>({
 // Ensures a user cannot add the same movie to their library twice
 MovieSchema.index({ userId: 1, tmdbId: 1 }, { unique: true });
 
+// Add text indexing for efficient local library search by title
+MovieSchema.index({ title: 'text' });
+
 const Movie = models.Movie || model<IMovie>('Movie', MovieSchema);
 
 export default Movie;

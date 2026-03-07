@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
+import InstallPrompt from './ui/install-prompt';
+import PushNotificationManager from './ui/push-notification-manager';
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +31,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <PushNotificationManager />
+        <InstallPrompt />
         {children}
       </body>
     </html>
