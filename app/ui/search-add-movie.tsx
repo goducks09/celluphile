@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { searchMovies, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
 import { addMovieToLibrary } from '@/app/lib/actions';
+import { db } from '@/app/lib/db-client';
 
 export default function SearchAddMovie() {
     const [query, setQuery] = useState('');
@@ -38,14 +39,39 @@ export default function SearchAddMovie() {
         }
 
         setMessage(`Adding ${movie.title}...`);
+
+        const payload = {
+            tmdbId: movie.id,
+            title: movie.title,
+            poster: movie.poster_path || '',
+            genre: movie.genre_ids.map(String),
+            quality: quality as 'Digital' | 'Blu-ray' | '4K' | 'DVD',
+        };
+
+        if (!navigator.onLine) {
+            try {
+                // Add to Dexie cache for immediate UI viewing
+                await db.movies.put({ ...payload, addedAt: new Date() });
+                // Push to sync queue
+                await db.syncQueue.add({
+                    action: 'add',
+                    payload: payload,
+                    timestamp: Date.now()
+                });
+                setMessage(`${movie.title} added offline. Will sync when connected.`);
+                setSelectedQualities((prev) => {
+                    const updated = { ...prev };
+                    delete updated[movie.id];
+                    return updated;
+                });
+            } catch (err) {
+                setMessage('Failed to save movie offline.');
+            }
+            return;
+        }
+
         try {
-            const result = await addMovieToLibrary({
-                tmdbId: movie.id,
-                title: movie.title,
-                poster: movie.poster_path || '',
-                genre: movie.genre_ids.map(String), // We'll map genre IDs to names later if needed
-                quality: quality as 'Digital' | 'Blu-ray' | '4K' | 'DVD',
-            });
+            const result = await addMovieToLibrary(payload);
             setMessage(result.message);
             // Optionally clear the selection after successful add
             setSelectedQualities((prev) => {

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 import InstallPrompt from './ui/install-prompt';
+import OfflineManager from './ui/offline-manager';
 import PushNotificationManager from './ui/push-notification-manager';
 
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       >
         <PushNotificationManager />
         <InstallPrompt />
+        <OfflineManager />
         {children}
       </body>
     </html>

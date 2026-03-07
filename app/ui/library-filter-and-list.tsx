@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { searchUserLibrary } from '@/app/lib/actions';
+import { searchUserLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
+import { db } from '@/app/lib/db-client';
 
 // We define this interface to match our populated movie document shape
 interface LibraryMovie {
@@ -27,14 +28,37 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
             setLoading(true);
             setError('');
             try {
-                const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+                if (!navigator.onLine) {
+                    // Offline Read: Query Dexie local cache
+                    let localQuery = db.movies.orderBy('addedAt').reverse();
+                    if (selectedQuality) {
+                        localQuery = localQuery.filter(m => m.quality === selectedQuality);
+                    }
+                    if (query && query.trim() !== '') {
+                        const lowerQuery = query.toLowerCase();
+                        localQuery = localQuery.filter(m => m.title.toLowerCase().includes(lowerQuery));
+                    }
+                    const localMovies = await localQuery.toArray();
+                    setMovies(localMovies as any[]);
+                    return;
+                }
 
-                // If query is empty and no filters, skip fetching as we might want to just show initial
-                // But for robust filtering, we fetch to ensure Server/Client state sync.
+                // Online Read: Query Server
+                const filters = selectedQuality ? { quality: [selectedQuality] } : {};
                 const result = await searchUserLibrary(query, filters);
 
                 if (result.success) {
                     setMovies(result.movies);
+                    // Overwrite Dexie cache with fresh server state when fetching the unfiltered root library
+                    const pendingOps = await db.syncQueue.count();
+                    if (pendingOps === 0 && !query && !selectedQuality) {
+                        await db.movies.clear();
+                        const moviesToCache = result.movies.map((m: any) => ({
+                            ...m,
+                            addedAt: new Date(m.addedAt)
+                        }));
+                        await db.movies.bulkAdd(moviesToCache);
+                    }
                 } else {
                     setError(result.message || 'Failed to apply filters.');
                 }
@@ -51,6 +75,38 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
 
         return () => clearTimeout(timeoutId);
     }, [query, selectedQuality]);
+
+    const handleDelete = async (tmdbId: number) => {
+        // Optimistically remove from UI
+        setMovies(prev => prev.filter(m => m.tmdbId !== tmdbId));
+
+        if (!navigator.onLine) {
+            try {
+                // Delete from local cache and queue sync operation
+                await db.movies.where('tmdbId').equals(tmdbId).delete();
+                await db.syncQueue.add({
+                    action: 'remove',
+                    payload: { tmdbId },
+                    timestamp: Date.now()
+                });
+            } catch (err) {
+                console.error('Failed to queue offline delete', err);
+            }
+            return;
+        }
+
+        try {
+            const result = await removeMovieFromLibrary(tmdbId);
+            if (!result.success) {
+                // Re-fetch to restore state if it failed
+                setError(result.message || 'Failed to remove movie.');
+            } else {
+                await db.movies.where('tmdbId').equals(tmdbId).delete();
+            }
+        } catch (err) {
+            setError('An error occurred while removing the movie.');
+        }
+    };
 
     return (
         <div className="w-full max-w-6xl mx-auto my-8">
@@ -115,8 +171,17 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                                         <span className="bg-gray-100 px-2 py-1 rounded">{movie.quality}</span>
                                     </div>
                                 </div>
-                                <div className="text-xs text-gray-400 mt-4">
-                                    Added: {new Date(movie.addedAt).toLocaleDateString()}
+                                <div className="text-xs text-gray-400 mt-4 flex justify-between items-center">
+                                    <span>Added: {new Date(movie.addedAt).toLocaleDateString()}</span>
+                                    <button
+                                        onClick={() => handleDelete(movie.tmdbId)}
+                                        className="text-red-500 hover:text-red-700 p-1"
+                                        title="Remove from library"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>

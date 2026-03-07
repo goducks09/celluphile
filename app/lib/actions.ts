@@ -8,7 +8,9 @@ import dbConnect from './mongoose';
 import Movie from '../models/movie';
 import User from '../models/user';
 
-type SessionSuccess = { session: NonNullable<Awaited<ReturnType<typeof auth>>>; error?: never };
+import type { Session } from 'next-auth';
+
+type SessionSuccess = { session: Session & { user: { id: string } }; error?: never };
 type SessionError = { error: { success: false; message: string }; session?: never };
 
 function initWebPush() {
@@ -29,7 +31,7 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
         return { error: { success: false, message: 'Invalid session.' } };
     }
 
-    return { session };
+    return { session: session as Session & { user: { id: string } } };
 }
 
 export async function addMovieToLibrary(movieData: {
