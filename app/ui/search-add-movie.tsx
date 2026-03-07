@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { searchMovies, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
 import { addMovieToLibrary } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
+import { toast } from 'sonner';
 
 export default function SearchAddMovie() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<TMDBMovie[]>([]);
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
     const [selectedQualities, setSelectedQualities] = useState<Record<number, string>>({});
 
     const handleSearch = async (e: React.FormEvent) => {
@@ -17,15 +17,15 @@ export default function SearchAddMovie() {
         if (!query.trim()) return;
 
         setLoading(true);
-        setMessage('');
         try {
             const data: TMDBSearchResponse = await searchMovies(query);
             setResults(data.results);
             if (data.results.length === 0) {
-                setMessage('No movies found.');
+                toast.info('No movies found for that query.');
             }
         } catch (error) {
-            setMessage('Failed to search movies.');
+            console.error('Failed to search TMDB:', error);
+            toast.error('Failed to search TMDB for movies.');
         } finally {
             setLoading(false);
         }
@@ -34,11 +34,11 @@ export default function SearchAddMovie() {
     const handleAddMovie = async (movie: TMDBMovie) => {
         const quality = selectedQualities[movie.id];
         if (!quality) {
-            setMessage(`Please select a quality format before adding ${movie.title}.`);
+            toast.warning(`Please select a quality format before adding ${movie.title}.`);
             return;
         }
 
-        setMessage(`Adding ${movie.title}...`);
+        const loadingToastId = toast.loading(`Adding ${movie.title}...`);
 
         const payload = {
             tmdbId: movie.id,
@@ -58,29 +58,35 @@ export default function SearchAddMovie() {
                     payload: payload,
                     timestamp: Date.now()
                 });
-                setMessage(`${movie.title} added offline. Will sync when connected.`);
+                toast.success(`${movie.title} added offline. Will sync when connected.`, { id: loadingToastId });
                 setSelectedQualities((prev) => {
                     const updated = { ...prev };
                     delete updated[movie.id];
                     return updated;
                 });
             } catch (err) {
-                setMessage('Failed to save movie offline.');
+                console.error('Failed to cache movie offline:', err);
+                toast.error('Failed to save movie offline.', { id: loadingToastId });
             }
             return;
         }
 
         try {
             const result = await addMovieToLibrary(payload);
-            setMessage(result.message);
-            // Optionally clear the selection after successful add
-            setSelectedQualities((prev) => {
-                const updated = { ...prev };
-                delete updated[movie.id];
-                return updated;
-            });
+            if (result.success) {
+                toast.success(result.message || 'Movie added to library!', { id: loadingToastId });
+                // Only clear the selection after successful add
+                setSelectedQualities((prev) => {
+                    const updated = { ...prev };
+                    delete updated[movie.id];
+                    return updated;
+                });
+            } else {
+                toast.error(result.message || 'Failed to add movie.', { id: loadingToastId });
+            }
         } catch (error) {
-            setMessage('Failed to add movie.');
+            console.error('Failed to add movie across network link:', error);
+            toast.error('Failed to add movie across network link.', { id: loadingToastId });
         }
     };
 
@@ -104,12 +110,6 @@ export default function SearchAddMovie() {
                     {loading ? 'Searching...' : 'Search'}
                 </button>
             </form>
-
-            {message && (
-                <div className="mb-4 p-3 bg-blue-100 text-blue-800 rounded">
-                    {message}
-                </div>
-            )}
 
             <div className="space-y-4">
                 {results.map((movie) => (

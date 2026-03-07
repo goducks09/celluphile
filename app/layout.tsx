@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
+import { Toaster } from "sonner";
 import InstallPrompt from './ui/install-prompt';
 import OfflineManager from './ui/offline-manager';
 import PushNotificationManager from './ui/push-notification-manager';
@@ -36,6 +37,7 @@ export default function RootLayout({
         <InstallPrompt />
         <OfflineManager />
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

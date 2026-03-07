@@ -4,24 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { searchUserLibrary, removeMovieFromLibrary, type SerializedMovie } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
+import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
+import { toast } from 'sonner';
 
-// We define this interface to match our populated movie document shape
-interface LibraryMovie {
-    _id: string;
-    tmdbId: number;
-    title: string;
-    poster: string;
-    genre: string[];
-    quality: string;
-    addedAt: Date;
-}
+// We use SerializedMovie for all client state
 
 export default function LibraryFilterAndList({ initialMovies, initialHasMore }: { initialMovies: SerializedMovie[], initialHasMore?: boolean }) {
     const [movies, setMovies] = useState<SerializedMovie[]>(initialMovies);
     const [query, setQuery] = useState('');
     const [selectedQuality, setSelectedQuality] = useState<'Digital' | 'Blu-ray' | '4K' | 'DVD' | ''>('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(initialHasMore ?? false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -32,7 +24,6 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             setLoading(true);
             setPage(1);
             setHasMore(false);
-            setError('');
             try {
                 if (!navigator.onLine) {
                     // Offline Read: Query Dexie local cache
@@ -73,10 +64,11 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                         });
                     }
                 } else {
-                    setError(result.message || 'Failed to apply filters.');
+                    toast.error(result.message || 'Failed to apply filters.');
                 }
             } catch (err) {
-                setError('An error occurred while filtering.');
+                console.error('Failed to filter movies:', err);
+                toast.error('An error occurred while filtering.');
             } finally {
                 setLoading(false);
             }
@@ -106,10 +98,11 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                 setHasMore(result.hasMore || false);
                 setPage(nextPage);
             } else {
-                setError(result.message || 'Failed to load more movies.');
+                toast.error(result.message || 'Failed to load more movies.');
             }
         } catch (err) {
-            setError('An error occurred while loading more movies.');
+            console.error('Failed to load more movies:', err);
+            toast.error('An error occurred while loading more movies.');
         } finally {
             setLoadingMore(false);
         }
@@ -145,8 +138,10 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     payload: { tmdbId },
                     timestamp: Date.now()
                 });
+                toast.success('Movie deleted offline. Will sync when reconnected.');
             } catch (err) {
                 console.error('Failed to queue offline delete', err);
+                toast.error('Failed to delete movie offline.');
             }
             return;
         }
@@ -156,13 +151,15 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             if (!result.success) {
                 // Re-fetch to restore state if it failed
                 if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
-                setError(result.message || 'Failed to remove movie.');
+                toast.error(result.message || 'Failed to remove movie.');
             } else {
                 await db.movies.where('tmdbId').equals(tmdbId).delete();
+                toast.success('Movie removed from library.');
             }
         } catch (err) {
             if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
-            setError('An error occurred while removing the movie.');
+            console.error('Failed to remove movie:', err);
+            toast.error('An error occurred while removing the movie.');
         }
     };
 
@@ -192,17 +189,12 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                 </select>
             </div>
 
-            {error && (
-                <div className="px-4 mb-4 text-red-600 font-medium">{error}</div>
-            )}
-
             {/* Loading State Overlay */}
-            {loading && (
-                <div className="px-4 mb-4 text-indigo-600 font-medium animate-pulse">Updating library...</div>
-            )}
-
-            {/* Movie Grid */}
-            {movies.length === 0 && !loading ? (
+            {loading ? (
+                <div className="px-4">
+                    <MoviesSkeleton />
+                </div>
+            ) : movies.length === 0 ? (
                 <div className="p-8 bg-white rounded-lg shadow text-center mx-4">
                     <h3 className="text-xl font-medium text-gray-700">No movies found</h3>
                     <p className="text-gray-500 mt-2">Try adjusting your search or filters.</p>
@@ -248,13 +240,14 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                             </div>
                         </div>
                     ))}
+                    {loadingMore && <MoviesSkeleton count={5} wrapper={false} />}
                 </div>
             )}
 
             {/* Infinite Scroll Sentinel */}
-            {movies.length > 0 && !loading && (
+            {movies.length > 0 && !loading && hasMore && (
                 <div ref={sentinelRef} className="h-10 w-full mt-8 flex justify-center items-center">
-                    {loadingMore && <div className="text-gray-500 animate-pulse text-sm">Loading more...</div>}
+                    {/* Optional: Add a subtle loading spinner here instead of text if preferred */}
                 </div>
             )}
         </div>
