@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { searchUserLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
+import { searchUserLibrary, removeMovieFromLibrary, type SerializedMovie } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
 
 // We define this interface to match our populated movie document shape
@@ -15,17 +16,22 @@ interface LibraryMovie {
     addedAt: Date;
 }
 
-export default function LibraryFilterAndList({ initialMovies }: { initialMovies: LibraryMovie[] }) {
-    const [movies, setMovies] = useState<LibraryMovie[]>(initialMovies);
+export default function LibraryFilterAndList({ initialMovies, initialHasMore }: { initialMovies: SerializedMovie[], initialHasMore?: boolean }) {
+    const [movies, setMovies] = useState<SerializedMovie[]>(initialMovies);
     const [query, setQuery] = useState('');
-    const [selectedQuality, setSelectedQuality] = useState<string>('');
+    const [selectedQuality, setSelectedQuality] = useState<'Digital' | 'Blu-ray' | '4K' | 'DVD' | ''>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(initialHasMore ?? false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     // Debounced search and filter effect
     useEffect(() => {
         const fetchFilteredMovies = async () => {
             setLoading(true);
+            setPage(1);
+            setHasMore(false);
             setError('');
             try {
                 if (!navigator.onLine) {
@@ -39,25 +45,32 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                         localQuery = localQuery.filter(m => m.title.toLowerCase().includes(lowerQuery));
                     }
                     const localMovies = await localQuery.toArray();
-                    setMovies(localMovies as any[]);
+                    setMovies(localMovies.map(m => ({
+                        ...m,
+                        _id: '',
+                        userId: '',
+                    } as SerializedMovie)));
                     return;
                 }
 
                 // Online Read: Query Server
-                const filters = selectedQuality ? { quality: [selectedQuality as 'Digital' | 'Blu-ray' | '4K' | 'DVD'] } : {};
-                const result = await searchUserLibrary(query, filters);
+                const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+                const result = await searchUserLibrary(query, filters, undefined, { page: 1, limit: 20 });
 
                 if (result.success) {
                     setMovies(result.movies);
+                    setHasMore(result.hasMore || false);
                     // Overwrite Dexie cache with fresh server state when fetching the unfiltered root library
                     const pendingOps = await db.syncQueue.count();
                     if (pendingOps === 0 && !query && !selectedQuality) {
-                        await db.movies.clear();
-                        const moviesToCache = result.movies.map((m: any) => ({
+                        const moviesToCache = result.movies.map((m) => ({
                             ...m,
                             addedAt: new Date(m.addedAt)
                         }));
-                        await db.movies.bulkAdd(moviesToCache);
+                        await db.transaction('rw', db.movies, async () => {
+                            await db.movies.clear();
+                            await db.movies.bulkAdd(moviesToCache);
+                        });
                     }
                 } else {
                     setError(result.message || 'Failed to apply filters.');
@@ -76,8 +89,51 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
         return () => clearTimeout(timeoutId);
     }, [query, selectedQuality]);
 
+    const loadMore = useCallback(async () => {
+        if (loadingMore || !hasMore || loading) return;
+        setLoadingMore(true);
+        try {
+            if (!navigator.onLine) {
+                setHasMore(false); // Stop the observer from retrying un-paginated offline reads
+                return;
+            }
+            const nextPage = page + 1;
+            const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+            const result = await searchUserLibrary(query, filters, undefined, { page: nextPage, limit: 20 });
+
+            if (result.success) {
+                setMovies(prev => [...prev, ...result.movies]);
+                setHasMore(result.hasMore || false);
+                setPage(nextPage);
+            } else {
+                setError(result.message || 'Failed to load more movies.');
+            }
+        } catch (err) {
+            setError('An error occurred while loading more movies.');
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [page, hasMore, loadingMore, loading, query, selectedQuality]);
+
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        }, { rootMargin: '100px' });
+
+        if (sentinelRef.current) {
+            observer.observe(sentinelRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [loadMore]);
+
     const handleDelete = async (tmdbId: number) => {
         // Optimistically remove from UI
+        const movieToRemove = movies.find(m => m.tmdbId === tmdbId);
         setMovies(prev => prev.filter(m => m.tmdbId !== tmdbId));
 
         if (!navigator.onLine) {
@@ -99,11 +155,13 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
             const result = await removeMovieFromLibrary(tmdbId);
             if (!result.success) {
                 // Re-fetch to restore state if it failed
+                if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
                 setError(result.message || 'Failed to remove movie.');
             } else {
                 await db.movies.where('tmdbId').equals(tmdbId).delete();
             }
         } catch (err) {
+            if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
             setError('An error occurred while removing the movie.');
         }
     };
@@ -123,7 +181,7 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                 />
                 <select
                     value={selectedQuality}
-                    onChange={(e) => setSelectedQuality(e.target.value)}
+                    onChange={(e) => setSelectedQuality(e.target.value as 'Digital' | 'Blu-ray' | '4K' | 'DVD' | '')}
                     className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                 >
                     <option value="">All Qualities</option>
@@ -154,11 +212,15 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                     {movies.map((movie) => (
                         <div key={movie.tmdbId} className="flex flex-col bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
                             {movie.poster ? (
-                                <img
-                                    src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
-                                    alt={`${movie.title} poster`}
-                                    className="w-full h-80 object-cover"
-                                />
+                                <div className="relative w-full h-80">
+                                    <Image
+                                        src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
+                                        alt={`${movie.title} poster`}
+                                        fill
+                                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                        className="object-cover"
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-full h-80 bg-gray-200 flex items-center justify-center text-gray-500">
                                     No Poster Available
@@ -186,6 +248,13 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Infinite Scroll Sentinel */}
+            {movies.length > 0 && !loading && (
+                <div ref={sentinelRef} className="h-10 w-full mt-8 flex justify-center items-center">
+                    {loadingMore && <div className="text-gray-500 animate-pulse text-sm">Loading more...</div>}
                 </div>
             )}
         </div>

@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { Types, type Document } from 'mongoose';
+import mongoose, { Types, type Document } from 'mongoose';
 import webpush from 'web-push';
 import dbConnect from './mongoose';
 import Movie from '../models/movie';
@@ -112,6 +112,11 @@ const searchSortSchema = z.object({
     order: z.union([z.literal(1), z.literal(-1)]),
 }).optional();
 
+const searchPaginationSchema = z.object({
+    page: z.number().int().positive().default(1),
+    limit: z.number().int().positive().max(100).default(20),
+}).default({ page: 1, limit: 20 });
+
 const updateMovieSchema = z.object({
     quality: qualityEnum.optional(),
     customNotes: z.string().optional(),
@@ -187,28 +192,38 @@ export async function removeMovieFromLibrary(tmdbId: number) {
 export async function searchUserLibrary(
     query: string,
     filters?: z.infer<typeof searchFiltersSchema>,
-    sortOpts?: z.infer<typeof searchSortSchema>
-): Promise<{ success: boolean; message?: string; movies: SerializedMovie[] }> {
+    sortOpts?: z.infer<typeof searchSortSchema>,
+    pagination?: z.infer<typeof searchPaginationSchema>
+): Promise<{ success: boolean; message?: string; movies: SerializedMovie[]; totalCount?: number; hasMore?: boolean; page?: number }> {
     const { session, error } = await getValidatedSession('search your library');
     if (error) return { ...error, movies: [] as SerializedMovie[] };
 
     const parsedQuery = searchQuerySchema.safeParse(query);
     const parsedFilters = searchFiltersSchema.safeParse(filters);
     const parsedSort = searchSortSchema.safeParse(sortOpts);
+    const parsedPagination = searchPaginationSchema.safeParse(pagination || { page: 1, limit: 20 });
 
-    if (!parsedQuery.success || !parsedFilters.success || !parsedSort.success) {
+    if (!parsedQuery.success || !parsedFilters.success || !parsedSort.success || !parsedPagination.success) {
         return { success: false, message: 'Invalid search parameters.', movies: [] };
     }
 
     const safeQuery = parsedQuery.data;
     const safeFilters = parsedFilters.data;
     const safeSortOpts = parsedSort.data;
+    const { page, limit } = parsedPagination.data;
 
     try {
         await dbConnect();
 
+        type MovieFilterQuery = {
+            userId: Types.ObjectId;
+            $text?: { $search: string };
+            genre?: { $in: string[] };
+            quality?: { $in: string[] };
+        };
+
         const userId = new Types.ObjectId(session.user.id);
-        const filterQuery: any = { userId };
+        const filterQuery: MovieFilterQuery = { userId };
 
         if (safeQuery && safeQuery.trim() !== '') {
             filterQuery.$text = { $search: safeQuery };
@@ -222,7 +237,8 @@ export async function searchUserLibrary(
             filterQuery.quality = { $in: safeFilters.quality };
         }
 
-        let sortConfig: any = {};
+        type MovieSortConfig = Record<string, 1 | -1 | { $meta: 'textScore' }>;
+        let sortConfig: MovieSortConfig = {};
         if (safeQuery && safeQuery.trim() !== '') {
             sortConfig = { score: { $meta: 'textScore' } };
         } else if (safeSortOpts) {
@@ -237,15 +253,22 @@ export async function searchUserLibrary(
             mongooseQuery = mongooseQuery.select({ score: { $meta: 'textScore' } });
         }
 
-        const movies = await mongooseQuery.lean();
+        // Setup pagination
+        const skip = (page - 1) * limit;
+
+        const movies = await mongooseQuery.skip(skip).limit(limit + 1).lean();
+        const hasMore = movies.length > limit;
+        const pageMovies = hasMore ? movies.slice(0, limit) : movies;
 
         return {
             success: true,
-            movies: movies.map((movie) => ({
+            movies: pageMovies.map((movie) => ({
                 ...movie,
                 _id: movie._id.toString(),
                 userId: movie.userId.toString(),
             })) satisfies SerializedMovie[],
+            hasMore,
+            page
         };
     } catch (error) {
         console.error('Error searching user library:', error);
