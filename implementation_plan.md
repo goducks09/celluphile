@@ -81,6 +81,9 @@
 - Add toast notifications for actions
 - Build statistics dashboard (total movies, by genre, etc.)
 
+#### 3. Validation
+- Implement strict input validation schema with Zod for Next.js Server Actions
+
 ### Stage 6: Advanced Features (Week 8+)
 
 #### 1. AI Recommendations (Optional)

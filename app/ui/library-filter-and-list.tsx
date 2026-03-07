@@ -44,7 +44,7 @@ export default function LibraryFilterAndList({ initialMovies }: { initialMovies:
                 }
 
                 // Online Read: Query Server
-                const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+                const filters = selectedQuality ? { quality: [selectedQuality as 'Digital' | 'Blu-ray' | '4K' | 'DVD'] } : {};
                 const result = await searchUserLibrary(query, filters);
 
                 if (result.success) {
