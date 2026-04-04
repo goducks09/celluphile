@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:all": "npm run test && npm run e2e:headless",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "e2e": "NODE_ENV=test start-server-and-test dev http://localhost:3000 \"cypress open --e2e\"",
+    "e2e:headless-verbose": "NODE_ENV=test start-server-and-test dev http://localhost:3000 \"cypress run --e2e\"",
+    "e2e:headless": "NODE_ENV=test start-server-and-test 'npm run dev > /dev/null 2>&1' http://localhost:3000 'cypress run --e2e'"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
@@ -26,14 +34,24 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "cypress": "^15.12.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.5",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "start-server-and-test": "^2.1.5",
     "tailwindcss": "^4.1.17",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

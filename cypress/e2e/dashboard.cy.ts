@@ -1,0 +1,48 @@
+describe('E2E-5: Dashboard Page', () => {
+  const testEmail = `test-dashboard-${Date.now()}@example.com`;
+  const testPassword = '<REDACTED>';
+
+  before(() => {
+    // Reset DB for spec-level isolation
+    cy.request({
+      method: 'POST',
+      url: '/api/test/reset-db',
+      headers: { 'x-test-secret': 'cypress-test-secret' },
+    });
+    cy.registerUser(testEmail, testPassword);
+  });
+
+  // E2E-5.1: Displays user email in header
+  it('displays the logged-in user email in the header', () => {
+    cy.loginUser(testEmail, testPassword);
+    cy.contains(testEmail).should('be.visible');
+  });
+
+  // E2E-5.2: Contains search section
+  it('contains "Add Movies to Library" heading', () => {
+    cy.loginUser(testEmail, testPassword);
+    cy.contains('Add Movies to Library').should('be.visible');
+  });
+
+  // E2E-5.3: Contains library section
+  it('contains library section', () => {
+    // First add a movie so library section has content
+    cy.loginUser(testEmail, testPassword);
+
+    cy.get('input[placeholder="Search by title..."]').type('Inception');
+    cy.contains('button', 'Search').click();
+    cy.contains('Inception').should('be.visible');
+    cy.get('select').first().select('Blu-ray');
+    cy.contains('button', 'Add to Library').first().click();
+    cy.contains('added to library', { matchCase: false }).should('be.visible');
+
+    // Reload to see the server-rendered library
+    cy.reload();
+
+    cy.contains('Your Movie Library').should('be.visible');
+  });
+
+  // E2E-5.4: Error boundary rendering is tested via Jest component test
+  // in __tests__/ui/dashboard-error.test.tsx — not suitable for E2E since
+  // server component errors can't be triggered from the browser.
+});
