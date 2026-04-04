@@ -8,11 +8,10 @@ import { addMovieToLibrary, removeMovieFromLibrary, updateMovieInLibrary } from 
 const MAX_RETRY_COUNT = 3;
 
 export default function OfflineManager() {
-    // Lazy initialiser avoids a wrong false on the first render before
-    // the effect runs — important for SSR/hydration in Next.js.
-    const [isOffline, setIsOffline] = useState<boolean>(() =>
-        typeof navigator !== 'undefined' ? !navigator.onLine : false
-    );
+    // Always initialise as false to match the server render and avoid
+    // hydration mismatches. The real online/offline state is synced in
+    // the useEffect below once the component mounts on the client.
+    const [isOffline, setIsOffline] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
     // Ref-based guard so the sync lock doesn't need to live in the
@@ -78,6 +77,9 @@ export default function OfflineManager() {
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+
+        // Sync the real online/offline state now that we're on the client.
+        setIsOffline(!navigator.onLine);
 
         // Attempt to drain the queue on mount in case operations were
         // queued in a previous session. Auth errors here are non-fatal —

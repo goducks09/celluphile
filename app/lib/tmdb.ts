@@ -1,13 +1,11 @@
-const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_API_READ_ACCESS_TOKEN = process.env.TMDB_API_READ_ACCESS_TOKEN;
-
-const fetchOptions = {
+const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL || 'https://api.themoviedb.org/3';
+const getFetchOptions = () => ({
     method: 'GET',
     headers: {
         accept: 'application/json',
-        Authorization: `Bearer ${TMDB_API_READ_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
     },
-};
+});
 
 export interface TMDBMovie {
     id: number;
@@ -46,7 +44,7 @@ export async function searchMovies(query: string, page: number = 1): Promise<TMD
     const url = `${TMDB_API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${page}`;
 
     try {
-        const response = await fetch(url, fetchOptions);
+        const response = await fetch(url, getFetchOptions());
 
         if (!response.ok) {
             throw new Error(`TMDB API Error: ${response.status} ${response.statusText}`);
@@ -66,7 +64,7 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
     const url = `${TMDB_API_BASE_URL}/movie/${id}?language=en-US`;
 
     try {
-        const response = await fetch(url, fetchOptions);
+        const response = await fetch(url, getFetchOptions());
 
         if (!response.ok) {
             throw new Error(`TMDB API Error: ${response.status} ${response.statusText}`);
