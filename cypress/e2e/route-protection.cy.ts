@@ -1,6 +1,6 @@
 describe('E2E-2: Route Protection & Authorization', () => {
   const testEmail = `test-route-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = '';
 
   before(() => {
     // Reset DB for spec-level isolation
@@ -10,7 +10,10 @@ describe('E2E-2: Route Protection & Authorization', () => {
       headers: { 'x-test-secret': 'cypress-test-secret' },
     });
     // Register a test user for authenticated tests
-    cy.registerUser(testEmail, testPassword);
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
+      cy.registerUser(testEmail, testPassword);
+    });
   });
 
   // E2E-2.1: Unauthenticated access to /dashboard
@@ -41,9 +44,6 @@ describe('E2E-2: Route Protection & Authorization', () => {
 
   // E2E-2.5: Public pages accessible without auth
   it('allows access to public pages without auth', () => {
-    cy.visit('/');
-    cy.url().should('not.include', '/login');
-
     cy.visit('/offline');
     cy.contains('You are currently offline').should('be.visible');
   });

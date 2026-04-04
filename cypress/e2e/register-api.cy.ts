@@ -1,6 +1,6 @@
 describe('E2E-6: Registration API Route Security', () => {
   const testEmail = `test-api-reg-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = ''
 
 
   before(() => {
@@ -9,6 +9,9 @@ describe('E2E-6: Registration API Route Security', () => {
       method: 'POST',
       url: '/api/test/reset-db',
       headers: { 'x-test-secret': 'cypress-test-secret' },
+    });
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
     });
   });
 

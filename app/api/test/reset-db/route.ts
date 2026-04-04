@@ -15,8 +15,12 @@ export async function POST(request: Request) {
 
     try {
         await dbConnect();
-        // Drop the whole test database to ensure a clean slate
-        await mongoose.connection.dropDatabase();
+        const collections = await mongoose.connection.db?.collections();
+        if (collections) {
+            for (const collection of collections) {
+                await collection.deleteMany({});
+            }
+        }
         return NextResponse.json({ success: true, message: 'Test database reset successfully.' });
     } catch (error) {
         console.error('Failed to reset test database:', error);

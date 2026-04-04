@@ -1,6 +1,6 @@
 describe('E2E-1: Authentication Flow', () => {
   const testEmail = `test-auth-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = ''
 
   // Register the test user once before all tests so they don't
   // depend on test-1.1 having run first.
@@ -11,7 +11,10 @@ describe('E2E-1: Authentication Flow', () => {
       url: '/api/test/reset-db',
       headers: { 'x-test-secret': 'cypress-test-secret' },
     });
-    cy.registerUser(testEmail, testPassword);
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
+      cy.registerUser(testEmail, testPassword);
+    });
   });
 
   // E2E-1.1: Registration — happy path
@@ -59,7 +62,7 @@ describe('E2E-1: Authentication Flow', () => {
     cy.get('#password').type(testPassword);
     cy.get('button[type="submit"]').click();
 
-    cy.url().should('include', '/dashboard');
+    cy.url({ timeout: 6000 }).should('include', '/dashboard');
   });
 
   // E2E-1.5: Login — invalid credentials

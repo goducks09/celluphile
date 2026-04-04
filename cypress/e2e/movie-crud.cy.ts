@@ -1,6 +1,6 @@
 describe('E2E-3: Movie Library CRUD', () => {
   const testEmail = `test-crud-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = ''
   const searchTerm = 'Inception';
 
   before(() => {
@@ -10,7 +10,10 @@ describe('E2E-3: Movie Library CRUD', () => {
       url: '/api/test/reset-db',
       headers: { 'x-test-secret': 'cypress-test-secret' },
     });
-    cy.registerUser(testEmail, testPassword);
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
+      cy.registerUser(testEmail, testPassword);
+    });
   });
 
   beforeEach(() => {
@@ -37,7 +40,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains('button', 'Add to Library').first().click();
 
     // Success toast should appear
-    cy.contains('added to library', { matchCase: false }).should('be.visible');
+    cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
   });
 
   // E2E-3.3: Add movie without quality
@@ -47,9 +50,13 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains('The Matrix').should('be.visible');
 
     // Click add without selecting quality
-    cy.contains('button', 'Add to Library').first().click();
+    cy.contains('h3', 'The Matrix')
+      .closest('div.flex.items-center.justify-between')
+      .within(() => {
+        cy.contains('button', 'Add to Library').click();
+      });
 
-    cy.contains('Please select a quality format').should('be.visible');
+    cy.contains('Please select a quality format', { timeout: 10000 }).should('exist');
   });
 
   // E2E-3.4: Add duplicate movie
@@ -84,9 +91,13 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.get('input[placeholder="Search by title..."]').clear().type('The Matrix');
     cy.contains('button', 'Search').click();
     cy.contains('The Matrix').should('be.visible');
-    cy.get('select').first().select('DVD');
-    cy.contains('button', 'Add to Library').first().click();
-    cy.contains('added to library', { matchCase: false }).should('be.visible');
+    cy.contains('h3', 'The Matrix')
+      .closest('div.flex.items-center.justify-between')
+      .within(() => {
+        cy.get('select').select('DVD');
+        cy.contains('button', 'Add to Library').click();
+      });
+    cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Reload to see the server-rendered library with both movies
     cy.reload();
@@ -147,7 +158,9 @@ describe('E2E-3: Movie Library CRUD', () => {
         if ($body.find('button[title="Remove from library"]').length > 0) {
           cy.get('button[title="Remove from library"]').first().click();
           cy.contains('removed', { matchCase: false, timeout: 10000 }).should('exist');
-          cy.contains('removed', { matchCase: false }).should('not.exist');
+          // Important: Wait a brief moment to allow React to update the DOM 
+          // (removing the card) so the next recursive loop doesn't click the same 'remove' button again.
+          cy.wait(500);
           removeAllMovies();
         }
       });

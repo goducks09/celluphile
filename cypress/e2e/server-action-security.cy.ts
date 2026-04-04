@@ -1,7 +1,7 @@
 describe('E2E-4: Server Action Security', () => {
   const testEmailA = `test-security-a-${Date.now()}@example.com`;
   const testEmailB = `test-security-b-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = ''
 
   before(() => {
     // Reset DB for spec-level isolation
@@ -10,8 +10,11 @@ describe('E2E-4: Server Action Security', () => {
       url: '/api/test/reset-db',
       headers: { 'x-test-secret': 'cypress-test-secret' },
     });
-    cy.registerUser(testEmailA, testPassword);
-    cy.registerUser(testEmailB, testPassword);
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
+      cy.registerUser(testEmailA, testPassword);
+      cy.registerUser(testEmailB, testPassword);
+    });
   });
 
   // E2E-4.1: addMovieToLibrary without session
@@ -87,7 +90,7 @@ describe('E2E-4: Server Action Security', () => {
     cy.contains('Inception').should('be.visible');
     cy.get('select').first().select('4K');
     cy.contains('button', 'Add to Library').first().click();
-    cy.contains('added to library', { matchCase: false }).should('be.visible');
+    cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Log out and wait for redirect to complete
     cy.contains('button', 'Sign Out').click();

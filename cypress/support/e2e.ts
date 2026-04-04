@@ -30,11 +30,22 @@ Cypress.Commands.add('registerUser', (email: string, password: string) => {
 });
 
 Cypress.Commands.add('loginUser', (email: string, password: string) => {
-  cy.visit('/login');
-  cy.get('#email').type(email);
-  cy.get('#password').type(password);
-  cy.get('button[type="submit"]').click();
-  cy.url().should('include', '/dashboard');
+  cy.session(
+    email,
+    () => {
+      cy.visit('/login');
+      cy.get('#email').type(email);
+      cy.get('#password').type(password, { log: false });
+      cy.get('button[type="submit"]').click();
+      cy.url().should('include', '/dashboard');
+    },
+    {
+      cacheAcrossSpecs: true,
+    }
+  );
+  // Important: cy.session doesn't change the current URL.
+  // Since prior tests expect loginUser to leave the browser at /dashboard, we must visit it out here.
+  cy.visit('/dashboard');
 });
 
 Cypress.Commands.add('logoutUser', () => {

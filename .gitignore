@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+/cypress/screenshots
+/cypress/videos
+/cypress/results
+/cypress/downloads
 
 # next.js
 /.next/
@@ -32,6 +36,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+cypress.env.json
 
 # vercel
 .vercel

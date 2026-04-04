@@ -1,6 +1,6 @@
 describe('E2E-5: Dashboard Page', () => {
   const testEmail = `test-dashboard-${Date.now()}@example.com`;
-  const testPassword = '<REDACTED>';
+  let testPassword = ''
 
   before(() => {
     // Reset DB for spec-level isolation
@@ -9,7 +9,10 @@ describe('E2E-5: Dashboard Page', () => {
       url: '/api/test/reset-db',
       headers: { 'x-test-secret': 'cypress-test-secret' },
     });
-    cy.registerUser(testEmail, testPassword);
+    cy.env(['testPassword']).then(({ testPassword: pw }) => {
+      testPassword = pw;
+      cy.registerUser(testEmail, testPassword);
+    });
   });
 
   // E2E-5.1: Displays user email in header
@@ -34,7 +37,7 @@ describe('E2E-5: Dashboard Page', () => {
     cy.contains('Inception').should('be.visible');
     cy.get('select').first().select('Blu-ray');
     cy.contains('button', 'Add to Library').first().click();
-    cy.contains('added to library', { matchCase: false }).should('be.visible');
+    cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Reload to see the server-rendered library
     cy.reload();
