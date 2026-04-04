@@ -12,6 +12,18 @@ import { z } from 'zod';
 import type { Session } from 'next-auth';
 import type { IMovie } from '../models/movie';
 
+import {
+    addMovieSchema,
+    movieIdSchema,
+    pushSubscriptionSchema,
+    searchFiltersSchema,
+    sendNotificationSchema,
+    searchQuerySchema,
+    searchSortSchema,
+    searchPaginationSchema,
+    updateMovieSchema,
+} from './schemas';
+
 // ============================================================
 // Types
 // ============================================================
@@ -71,59 +83,6 @@ function revalidateLibrary() {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/library');
 }
-
-// ============================================================
-// Zod schemas
-// ============================================================
-
-const qualityEnum = z.enum(['Digital', 'Blu-ray', '4K', 'DVD']);
-
-const addMovieSchema = z.object({
-    tmdbId: z.number().int().positive(),
-    title: z.string().min(1, 'Title is required').max(255, 'Title cannot exceed 255 characters'),
-    poster: z.string(),
-    genre: z.array(z.string()),
-    quality: qualityEnum,
-    customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
-});
-
-const movieIdSchema = z.number().int().positive();
-
-const pushSubscriptionSchema = z.object({
-    endpoint: z.url(),
-    keys: z.object({
-        p256dh: z.string().min(1),
-        auth: z.string().min(1),
-    }),
-});
-
-const searchFiltersSchema = z.object({
-    genre: z.array(z.string()).optional(),
-    // Mirrors the quality enum so invalid values are rejected at the boundary.
-    quality: z.array(qualityEnum).optional(),
-}).optional();
-
-const sendNotificationSchema = z.string().min(1, 'Notification message cannot be empty');
-
-const searchQuerySchema = z.string();
-
-const searchSortSchema = z.object({
-    field: z.enum(['title', 'addedAt', 'release_date']),
-    order: z.union([z.literal(1), z.literal(-1)]),
-}).optional();
-
-const searchPaginationSchema = z.object({
-    page: z.number().int().positive().default(1),
-    limit: z.number().int().positive().max(100).default(20),
-}).default({ page: 1, limit: 20 });
-
-const updateMovieSchema = z.object({
-    quality: qualityEnum.optional(),
-    customNotes: z.string().optional(),
-}).refine(
-    (data) => Object.keys(data).length > 0,
-    { message: 'At least one field must be provided to update.' }
-);
 
 // ============================================================
 // Movie actions
