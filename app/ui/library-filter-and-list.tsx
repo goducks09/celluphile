@@ -17,6 +17,16 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(initialHasMore ?? false);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const formatDate = (dateString: string | Date | number) => {
+        if (!isMounted) return ''; // Fallback for server-side render to prevent hydration mismatch
+        return new Date(dateString).toLocaleDateString();
+    };
 
     // Debounced search and filter effect
     useEffect(() => {
@@ -226,7 +236,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                     </div>
                                 </div>
                                 <div className="text-xs text-gray-400 mt-4 flex justify-between items-center">
-                                    <span>Added: {new Date(movie.addedAt).toLocaleDateString()}</span>
+                                    <span>Added: {formatDate(movie.addedAt)}</span>
                                     <button
                                         onClick={() => handleDelete(movie.tmdbId)}
                                         className="text-red-500 hover:text-red-700 p-1"

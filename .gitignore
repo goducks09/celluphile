@@ -47,3 +47,5 @@ next-env.d.ts
 
 # Antigravity
 .agents
+# next-agents-md
+.next-docs/

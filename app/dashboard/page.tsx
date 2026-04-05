@@ -28,10 +28,10 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <main>
+      <div id="main-content">
         <SearchAddMovie />
         <LibraryList />
-      </main>
+      </div>
     </div>
   );
 }

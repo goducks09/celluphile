@@ -93,47 +93,6 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // Strategy 2: Stale-While-Revalidate for TMDB API responses.
-    // Serve cached data immediately, update in the background,
-    // but treat entries older than TMDB_API_MAX_AGE_MS as expired.
-    // ----------------------------------------------------------
-    if (url.hostname === 'api.themoviedb.org') {
-        event.respondWith(
-            caches.open(CACHES.tmdbApi).then((cache) => {
-                return cache.match(event.request).then((cachedResponse) => {
-                    const fetchAndCache = fetch(event.request).then((networkResponse) => {
-                        if (networkResponse?.status === 200) {
-                            // Store response alongside a timestamp header so we can
-                            // check freshness on the next read.
-                            const headers = new Headers(networkResponse.headers);
-                            headers.append('sw-cached-at', Date.now().toString());
-                            const timestampedResponse = new Response(
-                                networkResponse.clone().body,
-                                { status: networkResponse.status, headers }
-                            );
-                            cache.put(event.request, timestampedResponse);
-                        }
-                        return networkResponse;
-                    });
-
-                    if (cachedResponse) {
-                        const cachedAt = cachedResponse.headers.get('sw-cached-at');
-                        const isExpired =
-                            !cachedAt ||
-                            Date.now() - parseInt(cachedAt, 10) > TMDB_API_MAX_AGE_MS;
-
-                        // If expired, wait for the network; otherwise return the
-                        // stale response and revalidate in the background.
-                        return isExpired ? fetchAndCache : cachedResponse;
-                    }
-
-                    return fetchAndCache;
-                });
-            })
-        );
-        return;
-    }
 
     // ----------------------------------------------------------
     // Strategy 3: Network-First for HTML navigations.

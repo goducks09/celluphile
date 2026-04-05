@@ -1,3 +1,9 @@
+'use server';
+
+import { auth } from '@/auth';
+import { z } from 'zod';
+import { movieIdSchema, searchQuerySchema } from './schemas';
+
 const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL || 'https://api.themoviedb.org/3';
 const getFetchOptions = () => ({
     method: 'GET',
@@ -37,11 +43,26 @@ export interface TMDBMovieDetails extends TMDBMovie {
  * though a custom rate limiter could be added. TMDB allows 50 reqs/sec.
  */
 export async function searchMovies(query: string, page: number = 1): Promise<TMDBSearchResponse> {
-    if (!query) {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Unauthorized request.');
+    }
+
+    const parsedQuery = searchQuerySchema.safeParse(query);
+    const parsedPage = z.number().int().positive().safeParse(page);
+
+    if (!parsedQuery.success || !parsedPage.success) {
+        throw new Error('Invalid search parameters.');
+    }
+
+    const safeQuery = parsedQuery.data;
+    const safePage = parsedPage.data;
+
+    if (!safeQuery) {
         return { page: 1, results: [], total_pages: 0, total_results: 0 };
     }
 
-    const url = `${TMDB_API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${page}`;
+    const url = `${TMDB_API_BASE_URL}/search/movie?query=${encodeURIComponent(safeQuery)}&include_adult=false&language=en-US&page=${safePage}`;
 
     try {
         const response = await fetch(url, getFetchOptions());
@@ -61,7 +82,17 @@ export async function searchMovies(query: string, page: number = 1): Promise<TMD
  * Fetch detailed information for a specific movie by its TMDB ID
  */
 export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
-    const url = `${TMDB_API_BASE_URL}/movie/${id}?language=en-US`;
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Unauthorized request.');
+    }
+
+    const parsedId = movieIdSchema.safeParse(id);
+    if (!parsedId.success) {
+        throw new Error('Invalid movie ID.');
+    }
+
+    const url = `${TMDB_API_BASE_URL}/movie/${parsedId.data}?language=en-US`;
 
     try {
         const response = await fetch(url, getFetchOptions());
