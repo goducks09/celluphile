@@ -63,9 +63,10 @@ jest.mock('sonner', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-    return <img {...props} />;
+  default: ({ src, alt, fill, sizes, ...props }: any) => {
+    // fill and sizes are Next.js-specific — drop them so they
+    // don't get forwarded to the native <img> element
+    return <img src={src} alt={alt} {...props} />;
   },
 }));
 

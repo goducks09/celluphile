@@ -1,5 +1,11 @@
 import { searchMovies, getMovieDetails } from '@/app/lib/tmdb';
 
+// Mock @/auth at the top level so Jest intercepts it before module resolution
+// reaches next-auth (which uses ESM and can't be parsed by Jest's CJS transform)
+jest.mock('@/auth', () => ({
+  auth: jest.fn().mockResolvedValue({ user: { id: 'test-user-id' } }),
+}));
+
 // Save original fetch
 const originalFetch = global.fetch;
 

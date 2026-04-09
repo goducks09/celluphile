@@ -191,7 +191,7 @@ describe('PushNotificationManager', () => {
 
     const messageInput = screen.getByPlaceholderText(/enter notification message/i);
     await user.type(messageInput, 'Hello push!');
-    await user.click(screen.getByRole('button', { name: /send test/i }));
+    await user.click(screen.getByRole('button', { name: /send/i }));
 
     // sendNotification should have been called with the message text
     expect(mockSendNotification).toHaveBeenCalledWith('Hello push!');

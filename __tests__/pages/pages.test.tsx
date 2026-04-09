@@ -1,4 +1,10 @@
+import { redirect } from 'next/navigation';
 import { render, screen } from '@testing-library/react';
+
+// Mock navigation
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn(),
+}));
 
 // Mock next/image
 jest.mock('next/image', () => ({
@@ -25,16 +31,10 @@ jest.mock('@/app/ui/register-form', () => ({
 
 describe('Page Components', () => {
   describe('Home page', () => {
-    it('renders the heading', async () => {
+    it('redirects to /dashboard', async () => {
       const Home = (await import('@/app/page')).default;
       render(<Home />);
-      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    });
-
-    it('snapshot test', async () => {
-      const Home = (await import('@/app/page')).default;
-      const { container } = render(<Home />);
-      expect(container).toMatchSnapshot();
+      expect(redirect).toHaveBeenCalledWith('/dashboard');
     });
   });
 

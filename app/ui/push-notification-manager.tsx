@@ -88,7 +88,7 @@ export default function PushNotificationManager() {
                         </button>
                         <input
                             type="text"
-                            placeholder="Enter test message"
+                            placeholder="Enter notification message"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             className="border border-indigo-200 rounded px-3 py-1.5 text-black bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-[200px]"
