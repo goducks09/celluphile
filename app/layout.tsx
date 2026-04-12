@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-
-import "./globals.css";
+import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import InstallPrompt from './ui/install-prompt';
-import OfflineManager from './ui/offline-manager';
-import PushNotificationManager from './ui/push-notification-manager';
+
+import ClientLayout from './client-layout';
+import "./globals.css";
 
 
 const geistSans = Geist({
@@ -33,9 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <PushNotificationManager />
-        <InstallPrompt />
-        <OfflineManager />
+        <ClientLayout />
         {children}
         <Toaster position="top-center" richColors />
       </body>
