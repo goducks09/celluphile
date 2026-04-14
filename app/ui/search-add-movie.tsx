@@ -91,8 +91,8 @@ export default function SearchAddMovie() {
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto my-8 p-4 bg-gray-50 rounded-lg shadow">
-            <h2 className="text-2xl font-bold mb-4">Add Movies to Library</h2>
+        <div className="w-full max-w-2xl mx-auto my-8 p-4 rounded-lg shadow" style={{ background: 'var(--background-card)' }}>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>Add Movies to Library</h2>
 
             <form onSubmit={handleSearch} className="flex gap-2 mb-6">
                 <input
@@ -100,7 +100,8 @@ export default function SearchAddMovie() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search by title..."
-                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                 />
                 <button
                     type="submit"
@@ -113,10 +114,10 @@ export default function SearchAddMovie() {
 
             <div className="space-y-4">
                 {results.map((movie) => (
-                    <div key={movie.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded">
+                    <div key={movie.id} className="flex items-center justify-between p-3 border rounded" style={{ background: 'var(--background-input)', borderColor: 'var(--border)' }}>
                         <div>
                             <h3 className="font-semibold">{movie.title}</h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm" style={{ color: 'var(--foreground-muted)' }}>
                                 {movie.release_date ? movie.release_date.split('-')[0] : 'Unknown year'}
                             </p>
                         </div>
@@ -124,7 +125,8 @@ export default function SearchAddMovie() {
                             <select
                                 value={selectedQualities[movie.id] || ''}
                                 onChange={(e) => setSelectedQualities({ ...selectedQualities, [movie.id]: e.target.value })}
-                                className="p-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="p-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                             >
                                 <option value="" disabled>Select Quality</option>
                                 <option value="Digital">Digital</option>

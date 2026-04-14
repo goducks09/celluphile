@@ -1,8 +1,8 @@
 export function MoviesSkeleton({ count = 20, wrapper = true }: { count?: number; wrapper?: boolean }) {
     const items = Array.from({ length: count }).map((_, i) => (
-        <div key={`skeleton-${i}`} role="status" aria-label="Loading" className="relative group rounded overflow-hidden shadow-sm bg-gray-200 animate-pulse aspect-[2/3]">
+        <div key={`skeleton-${i}`} role="status" aria-label="Loading" className="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]" style={{ background: 'var(--background-card)' }}>
             {/* Placeholder for the poster */}
-            <div className="absolute inset-0 bg-gray-300"></div>
+            <div className="absolute inset-0" style={{ background: 'var(--background-input)' }}></div>
         </div>
     ));
 

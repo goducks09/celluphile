@@ -78,7 +78,7 @@ export default function PushNotificationManager() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 bg-indigo-50 text-indigo-900 py-3 px-4 text-sm font-medium border-b border-indigo-100">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 py-3 px-4 text-sm font-medium" style={{ background: 'var(--background-card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
             {subscription ? (
                 <>
                     <p className="text-center md:text-left">You are subscribed to push notifications.</p>
@@ -91,7 +91,8 @@ export default function PushNotificationManager() {
                             placeholder="Enter notification message"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            className="border border-indigo-200 rounded px-3 py-1.5 text-black bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-[200px]"
+                            className="border rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-[200px]"
+                            style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                         />
                         <button onClick={sendTestNotification} className="bg-indigo-600 text-white rounded px-4 py-1.5 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm">
                             Send

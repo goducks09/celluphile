@@ -184,12 +184,14 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search your library..."
-                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                 />
                 <select
                     value={selectedQuality}
                     onChange={(e) => setSelectedQuality(e.target.value as 'Digital' | 'Blu-ray' | '4K' | 'DVD' | '')}
-                    className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                 >
                     <option value="">All Qualities</option>
                     <option value="Digital">Digital</option>
@@ -205,14 +207,14 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     <MoviesSkeleton />
                 </div>
             ) : movies.length === 0 ? (
-                <div className="p-8 bg-white rounded-lg shadow text-center mx-4">
-                    <h3 className="text-xl font-medium text-gray-700">No movies found</h3>
-                    <p className="text-gray-500 mt-2">Try adjusting your search or filters.</p>
+                <div className="p-8 rounded-lg shadow text-center mx-4" style={{ background: 'var(--background-card)' }}>
+                    <h3 className="text-xl font-medium" style={{ color: 'var(--foreground)' }}>No movies found</h3>
+                    <p className="mt-2" style={{ color: 'var(--foreground-muted)' }}>Try adjusting your search or filters.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
                     {movies.map((movie) => (
-                        <div key={movie.tmdbId} className="flex flex-col bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
+                        <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                             {movie.poster ? (
                                 <div className="relative w-full h-80">
                                     <Image
@@ -224,18 +226,18 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                     />
                                 </div>
                             ) : (
-                                <div className="w-full h-80 bg-gray-200 flex items-center justify-center text-gray-500">
+                                <div className="w-full h-80 flex items-center justify-center" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
                                     No Poster Available
                                 </div>
                             )}
                             <div className="p-4 flex-1 flex flex-col justify-between">
                                 <div>
                                     <h3 className="font-bold text-lg leading-tight mb-1">{movie.title}</h3>
-                                    <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
-                                        <span className="bg-gray-100 px-2 py-1 rounded">{movie.quality}</span>
+                                    <div className="flex justify-between items-center text-sm mb-2" style={{ color: 'var(--foreground-muted)' }}>
+                                        <span className="px-2 py-1 rounded" style={{ background: 'var(--background-input)' }}>{movie.quality}</span>
                                     </div>
                                 </div>
-                                <div className="text-xs text-gray-400 mt-4 flex justify-between items-center">
+                                <div className="text-xs mt-4 flex justify-between items-center" style={{ color: 'var(--foreground-muted)' }}>
                                     <span>Added: {formatDate(movie.addedAt)}</span>
                                     <button
                                         onClick={() => handleDelete(movie.tmdbId)}

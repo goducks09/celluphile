@@ -1,16 +1,28 @@
 import { auth, signOut } from '@/auth';
-import SearchAddMovie from '@/app/ui/search-add-movie';
-import LibraryList from '@/app/ui/library-list';
+import { searchUserLibrary, getLibraryStats } from '@/app/lib/actions';
+import HomeDashboard from '@/app/ui/home-dashboard';
+
 export default async function DashboardPage() {
   const session = await auth();
 
+  // Fetch the 8 most-recent movies and library stats in parallel
+  const [libraryResult, statsResult] = await Promise.all([
+    searchUserLibrary('', undefined, undefined, { page: 1, limit: 8 }),
+    getLibraryStats(),
+  ]);
+
+  const recentMovies = libraryResult.success ? libraryResult.movies : [];
+  const stats = statsResult.success
+    ? statsResult.stats
+    : { totalFilms: 0, in4K: 0, thisMonth: 0 };
+
   return (
-    <div className="min-h-screen bg-gray-100 pb-12">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+    <div className="min-h-screen pb-12" style={{ background: 'var(--background)' }}>
+      <header className="dashboard-header">
+        <div className="dashboard-header-inner">
+          <h1 className="dashboard-brand">CELLU<span className="dashboard-brand-dot">●</span>PHILE</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{session?.user?.email}</span>
+            <span className="text-sm" style={{ color: 'var(--foreground-muted)' }}>{session?.user?.email}</span>
             <form
               action={async () => {
                 'use server';
@@ -19,7 +31,7 @@ export default async function DashboardPage() {
             >
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
+                className="dashboard-sign-out-btn"
               >
                 Sign Out
               </button>
@@ -28,10 +40,9 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <div id="main-content">
-        <SearchAddMovie />
-        <LibraryList />
-      </div>
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <HomeDashboard recentMovies={recentMovies} stats={stats} />
+      </main>
     </div>
   );
 }

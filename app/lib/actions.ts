@@ -270,6 +270,52 @@ export async function updateMovieInLibrary(
 }
 
 // ============================================================
+// Library stats
+// ============================================================
+
+export interface LibraryStats {
+    totalFilms: number;
+    in4K: number;
+    thisMonth: number;
+}
+
+export async function getLibraryStats(): Promise<{ success: boolean; message?: string; stats: LibraryStats }> {
+    const { session, error } = await getValidatedSession('view library stats');
+    if (error) return { ...error, stats: { totalFilms: 0, in4K: 0, thisMonth: 0 } };
+
+    try {
+        await dbConnect();
+
+        const userId = new Types.ObjectId(session.user.id);
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const [result] = await Movie.aggregate([
+            { $match: { userId } },
+            {
+                $group: {
+                    _id: null,
+                    totalFilms: { $sum: 1 },
+                    in4K: { $sum: { $cond: [{ $eq: ['$quality', '4K'] }, 1, 0] } },
+                    thisMonth: { $sum: { $cond: [{ $gte: ['$addedAt', startOfMonth] }, 1, 0] } },
+                },
+            },
+        ]);
+
+        return {
+            success: true,
+            stats: result
+                ? { totalFilms: result.totalFilms, in4K: result.in4K, thisMonth: result.thisMonth }
+                : { totalFilms: 0, in4K: 0, thisMonth: 0 },
+        };
+    } catch (err) {
+        console.error('Error fetching library stats:', err);
+        return { success: false, message: 'Failed to load library stats.', stats: { totalFilms: 0, in4K: 0, thisMonth: 0 } };
+    }
+}
+
+// ============================================================
 // Push notification actions
 // ============================================================
 
