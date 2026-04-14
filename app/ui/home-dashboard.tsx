@@ -5,15 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { SerializedMovie } from '@/app/lib/actions';
 import type { LibraryStats } from '@/app/lib/actions';
-
-type QualityFilter = '' | '4K' | 'Blu-ray' | 'Digital' | 'DVD';
-
-const QUALITY_COLORS: Record<string, string> = {
-    '4K': 'bg-amber-600',
-    'Blu-ray': 'bg-sky-600',
-    'Digital': 'bg-red-500',
-    'DVD': 'bg-violet-600',
-};
+import { QUALITIES, type Quality } from '@/app/lib/schemas';
+import { QUALITY_COLORS } from '@/app/ui/constants';
 
 export default function HomeDashboard({
     recentMovies,
@@ -22,17 +15,15 @@ export default function HomeDashboard({
     recentMovies: SerializedMovie[];
     stats: LibraryStats;
 }) {
-    const [activeFilter, setActiveFilter] = useState<QualityFilter>('');
+    const [activeFilter, setActiveFilter] = useState<Quality | ''>('');
 
     const filteredMovies = activeFilter
         ? recentMovies.filter((m) => m.quality === activeFilter)
         : recentMovies;
 
-    const filters: { label: string; value: QualityFilter }[] = [
+    const filters: { label: string; value: Quality | '' }[] = [
         { label: 'All', value: '' },
-        { label: '4K', value: '4K' },
-        { label: 'Blu-ray', value: 'Blu-ray' },
-        { label: 'Digital', value: 'Digital' },
+        ...QUALITIES.map((q) => ({ label: q, value: q })),
     ];
 
     return (

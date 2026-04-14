@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import type { Quality } from '@/app/lib/schemas';
 
 export interface LocalMovie {
     // userId is intentionally excluded — IndexedDB is scoped to the active user
@@ -6,7 +7,7 @@ export interface LocalMovie {
     title: string;
     poster: string;
     genre: string[];
-    quality: 'Digital' | 'Blu-ray' | '4K' | 'DVD';
+    quality: Quality;
     customNotes?: string;
     addedAt: Date;
 }
@@ -14,7 +15,7 @@ export interface LocalMovie {
 type SyncPayload =
     | { action: 'add'; payload: LocalMovie }
     | { action: 'remove'; payload: { tmdbId: number } }
-    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: 'Digital' | 'Blu-ray' | '4K' | 'DVD'; customNotes?: string } } };
+    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: Quality; customNotes?: string } } };
 
 export type SyncOperation = SyncPayload & {
     id?: number;

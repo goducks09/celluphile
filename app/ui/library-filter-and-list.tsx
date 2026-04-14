@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { searchUserLibrary, removeMovieFromLibrary, type SerializedMovie } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
+import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 import { toast } from 'sonner';
 
@@ -12,7 +13,7 @@ import { toast } from 'sonner';
 export default function LibraryFilterAndList({ initialMovies, initialHasMore }: { initialMovies: SerializedMovie[], initialHasMore?: boolean }) {
     const [movies, setMovies] = useState<SerializedMovie[]>(initialMovies);
     const [query, setQuery] = useState('');
-    const [selectedQuality, setSelectedQuality] = useState<'Digital' | 'Blu-ray' | '4K' | 'DVD' | ''>('');
+    const [selectedQuality, setSelectedQuality] = useState<Quality | ''>('');
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(initialHasMore ?? false);
@@ -189,15 +190,14 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                 />
                 <select
                     value={selectedQuality}
-                    onChange={(e) => setSelectedQuality(e.target.value as 'Digital' | 'Blu-ray' | '4K' | 'DVD' | '')}
+                    onChange={(e) => setSelectedQuality(e.target.value as Quality | '')}
                     className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                 >
                     <option value="">All Qualities</option>
-                    <option value="Digital">Digital</option>
-                    <option value="Blu-ray">Blu-ray</option>
-                    <option value="4K">4K</option>
-                    <option value="DVD">DVD</option>
+                    {QUALITIES.map((q) => (
+                        <option key={q} value={q}>{q}</option>
+                    ))}
                 </select>
             </div>
 

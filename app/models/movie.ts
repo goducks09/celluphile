@@ -1,4 +1,5 @@
 import { Schema, model, models, Types, type HydratedDocument } from 'mongoose';
+import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
 export interface IMovie {
   userId: Types.ObjectId;
@@ -6,7 +7,7 @@ export interface IMovie {
   title: string;
   poster: string;
   genre: string[];
-  quality: 'Digital' | 'Blu-ray' | '4K' | 'DVD';
+  quality: Quality;
   addedAt: Date;
   customNotes?: string;
 }
@@ -39,7 +40,7 @@ const MovieSchema = new Schema<IMovie>({
   },
   quality: {
     type: String,
-    enum: ['Digital', 'Blu-ray', '4K', 'DVD'],
+    enum: QUALITIES,
     required: true,
   },
   addedAt: {

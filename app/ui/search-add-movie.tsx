@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { searchMovies, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
 import { addMovieToLibrary } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
+import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { toast } from 'sonner';
 
 export default function SearchAddMovie() {
@@ -45,7 +46,7 @@ export default function SearchAddMovie() {
             title: movie.title,
             poster: movie.poster_path || '',
             genre: movie.genre_ids.map(String),
-            quality: quality as 'Digital' | 'Blu-ray' | '4K' | 'DVD',
+            quality: quality as Quality,
         };
 
         if (!navigator.onLine) {
@@ -129,10 +130,9 @@ export default function SearchAddMovie() {
                                 style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                             >
                                 <option value="" disabled>Select Quality</option>
-                                <option value="Digital">Digital</option>
-                                <option value="Blu-ray">Blu-ray</option>
-                                <option value="4K">4K</option>
-                                <option value="DVD">DVD</option>
+                                {QUALITIES.map((q) => (
+                                    <option key={q} value={q}>{q}</option>
+                                ))}
                             </select>
                             <button
                                 onClick={() => handleAddMovie(movie)}

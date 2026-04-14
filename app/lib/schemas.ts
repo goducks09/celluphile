@@ -6,6 +6,12 @@ import { z } from 'zod';
 
 export const qualityEnum = z.enum(['Digital', 'Blu-ray', '4K', 'DVD']);
 
+/** Union type derived from the Zod enum — the single source of truth for quality values. */
+export type Quality = z.infer<typeof qualityEnum>;
+
+/** Ordered array of every quality value. Use this to render selects, filters, etc. */
+export const QUALITIES: Quality[] = qualityEnum.options;
+
 export const addMovieSchema = z.object({
     tmdbId: z.number().int().positive(),
     title: z.string().min(1, 'Title is required').max(255, 'Title cannot exceed 255 characters'),
