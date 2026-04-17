@@ -43,7 +43,7 @@ export default function HomeDashboard({
                     </Link>
 
                     {/* Pick a Random Movie */}
-                    <Link href="/dashboard/library" className="home-action-btn home-action-btn--accent" id="action-random-movie">
+                    <Link href="/dashboard/random" className="home-action-btn home-action-btn--accent" id="action-random-movie">
                         <div className="home-action-btn-content">
                             <span className="home-action-btn-label home-action-btn-label--accent">Pick a random movie</span>
                             <span className="home-action-btn-sub">Let your library decide tonight</span>
@@ -51,7 +51,7 @@ export default function HomeDashboard({
                     </Link>
 
                     {/* Recommended For Me */}
-                    <Link href="/dashboard/library" className="home-action-btn home-action-btn--accent" id="action-recommended">
+                    <Link href="/dashboard/recommendations" className="home-action-btn home-action-btn--accent" id="action-recommended">
                         <div className="home-action-btn-content">
                             <span className="home-action-btn-label home-action-btn-label--accent">Recommended for me</span>
                             <span className="home-action-btn-sub">Based on what you own</span>

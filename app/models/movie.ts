@@ -1,6 +1,18 @@
 import { Schema, model, models, Types, type HydratedDocument } from 'mongoose';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
+export interface IActor {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+}
+
+export interface IDirector {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+}
+
 export interface IMovie {
   userId: Types.ObjectId;
   tmdbId: number;
@@ -10,6 +22,10 @@ export interface IMovie {
   quality: Quality;
   addedAt: Date;
   customNotes?: string;
+  actors: IActor[];
+  directors: IDirector[];
+  releaseDate?: string;
+  runtime?: number;
 }
 
 export type IMovieDocument = HydratedDocument<IMovie>;
@@ -52,6 +68,16 @@ const MovieSchema = new Schema<IMovie>({
     trim: true,
     maxlength: 500,
   },
+  actors: {
+    type: [{ firstName: String, lastName: String, fullName: String }],
+    default: [],
+  },
+  directors: {
+    type: [{ firstName: String, lastName: String, fullName: String }],
+    default: [],
+  },
+  releaseDate: { type: String },
+  runtime: { type: Number },
 });
 
 // Ensures a user cannot add the same movie to their library twice

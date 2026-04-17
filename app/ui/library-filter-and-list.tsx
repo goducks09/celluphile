@@ -233,6 +233,21 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                             <div className="p-4 flex-1 flex flex-col justify-between">
                                 <div>
                                     <h3 className="font-bold text-lg leading-tight mb-1">{movie.title}</h3>
+                                    <p className="text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
+                                        {movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}
+                                        {movie.releaseDate && movie.runtime ? ' • ' : ''}
+                                        {movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
+                                    </p>
+                                    {movie.directors && movie.directors.length > 0 && (
+                                        <p className="text-sm mb-1" style={{ color: 'var(--foreground-muted)' }}>
+                                            <span className="font-semibold">Dir:</span> {movie.directors.map(d => d.fullName).join(', ')}
+                                        </p>
+                                    )}
+                                    {movie.actors && movie.actors.length > 0 && (
+                                        <p className="text-xs mb-3 italic truncate" style={{ color: 'var(--foreground-muted)' }}>
+                                            {movie.actors.map(a => a.fullName).join(', ')}
+                                        </p>
+                                    )}
                                     <div className="flex justify-between items-center text-sm mb-2" style={{ color: 'var(--foreground-muted)' }}>
                                         <span className="px-2 py-1 rounded" style={{ background: 'var(--background-input)' }}>{movie.quality}</span>
                                     </div>

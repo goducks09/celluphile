@@ -371,3 +371,63 @@ body {
   color: #818cf8;
   text-decoration: underline;
 }
+
+/* ============================================================
+   Stub / Coming-Soon Pages
+   ============================================================ */
+
+.stub-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem 1rem;
+}
+
+.stub-card {
+  max-width: 28rem;
+  width: 100%;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--background-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+.stub-icon {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 1.25rem;
+}
+
+.stub-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 0.75rem;
+}
+
+.stub-description {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--foreground-muted);
+  margin-bottom: 1.75rem;
+}
+
+.stub-back-link {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-light);
+  text-decoration: none;
+  padding: 0.5rem 1.25rem;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.stub-back-link:hover {
+  background: var(--accent);
+  color: #fff;
+}

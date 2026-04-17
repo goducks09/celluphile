@@ -12,6 +12,12 @@ export type Quality = z.infer<typeof qualityEnum>;
 /** Ordered array of every quality value. Use this to render selects, filters, etc. */
 export const QUALITIES: Quality[] = qualityEnum.options;
 
+export const personSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  fullName: z.string(),
+});
+
 export const addMovieSchema = z.object({
     tmdbId: z.number().int().positive(),
     title: z.string().min(1, 'Title is required').max(255, 'Title cannot exceed 255 characters'),
@@ -19,6 +25,10 @@ export const addMovieSchema = z.object({
     genre: z.array(z.string()),
     quality: qualityEnum,
     customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
+    actors: z.array(personSchema).default([]),
+    directors: z.array(personSchema).default([]),
+    releaseDate: z.string().optional(),
+    runtime: z.number().int().nonnegative().optional(),
 });
 
 export const movieIdSchema = z.number().int().positive();

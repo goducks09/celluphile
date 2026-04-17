@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { searchMovies, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
+import { searchMovies, getMovieDetails, extractCredits, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
 import { addMovieToLibrary } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
@@ -41,12 +41,27 @@ export default function SearchAddMovie() {
 
         const loadingToastId = toast.loading(`Adding ${movie.title}...`);
 
+        let details;
+        try {
+            details = await getMovieDetails(movie.id);
+        } catch (error) {
+             console.error('Failed to get enhanced movie details:', error);
+             toast.error(`Failed to fetch details for ${movie.title}.`, { id: loadingToastId });
+             return;
+        }
+        
+        const { actors, directors } = extractCredits(details);
+
         const payload = {
             tmdbId: movie.id,
             title: movie.title,
             poster: movie.poster_path || '',
-            genre: movie.genre_ids.map(String),
+            genre: details.genres.map(g => g.name),
             quality: quality as Quality,
+            actors,
+            directors,
+            releaseDate: details.release_date || undefined,
+            runtime: details.runtime ?? undefined,
         };
 
         if (!navigator.onLine) {

@@ -4,8 +4,12 @@ import SearchAddMovie from '@/app/ui/search-add-movie';
 
 // Mock tmdb
 const mockSearchMovies = jest.fn();
+const mockGetMovieDetails = jest.fn();
+const mockExtractCredits = jest.fn();
 jest.mock('@/app/lib/tmdb', () => ({
   searchMovies: (...args: any[]) => mockSearchMovies(...args),
+  getMovieDetails: (...args: any[]) => mockGetMovieDetails(...args),
+  extractCredits: (...args: any[]) => mockExtractCredits(...args),
 }));
 
 // Mock actions
@@ -51,6 +55,29 @@ describe('SearchAddMovie', () => {
   beforeEach(() => {
     // Default to online
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
+
+    // Default getMovieDetails / extractCredits so the add-flow reaches downstream logic
+    mockGetMovieDetails.mockResolvedValue({
+      id: 550,
+      title: 'Fight Club',
+      overview: 'An insomniac...',
+      poster_path: '/poster.jpg',
+      release_date: '1999-10-15',
+      genre_ids: [18, 53],
+      vote_average: 8.4,
+      genres: [{ id: 18, name: 'Drama' }, { id: 53, name: 'Thriller' }],
+      runtime: 139,
+      status: 'Released',
+      tagline: '',
+      credits: {
+        cast: [{ id: 1, name: 'Brad Pitt', order: 0 }],
+        crew: [{ id: 2, name: 'David Fincher', job: 'Director' }],
+      },
+    });
+    mockExtractCredits.mockReturnValue({
+      actors: [{ firstName: 'Brad', lastName: 'Pitt', fullName: 'Brad Pitt' }],
+      directors: [{ firstName: 'David', lastName: 'Fincher', fullName: 'David Fincher' }],
+    });
   });
 
   it('renders search input and button', () => {

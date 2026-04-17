@@ -30,11 +30,29 @@ export interface TMDBSearchResponse {
     total_results: number;
 }
 
+export interface TMDBCrewMember {
+  id: number;
+  name: string;
+  job: string;
+}
+
+export interface TMDBCastMember {
+  id: number;
+  name: string;
+  order: number;
+}
+
+export interface TMDBCredits {
+  cast: TMDBCastMember[];
+  crew: TMDBCrewMember[];
+}
+
 export interface TMDBMovieDetails extends TMDBMovie {
     genres: { id: number; name: string }[];
     runtime: number | null;
     status: string;
     tagline: string;
+    credits: TMDBCredits;
 }
 
 /**
@@ -92,7 +110,7 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
         throw new Error('Invalid movie ID.');
     }
 
-    const url = `${TMDB_API_BASE_URL}/movie/${parsedId.data}?language=en-US`;
+    const url = `${TMDB_API_BASE_URL}/movie/${parsedId.data}?language=en-US&append_to_response=credits`;
 
     try {
         const response = await fetch(url, getFetchOptions());
@@ -106,4 +124,22 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
         console.error(`Error fetching movie details for ID ${id}:`, error);
         throw new Error('Failed to fetch movie details. Please try again later.');
     }
+}
+
+export function extractCredits(details: TMDBMovieDetails, maxCast = 10) {
+  const splitName = (name: string) => {
+    const parts = name.trim().split(' ');
+    const lastName = parts.length > 1 ? parts.pop()! : '';
+    return { firstName: parts.join(' '), lastName, fullName: name.trim() };
+  };
+
+  const actors = details.credits.cast
+    .slice(0, maxCast)
+    .map(c => splitName(c.name));
+
+  const directors = details.credits.crew
+    .filter(c => c.job === 'Director')
+    .map(c => splitName(c.name));
+
+  return { actors, directors };
 }

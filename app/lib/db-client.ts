@@ -10,6 +10,10 @@ export interface LocalMovie {
     quality: Quality;
     customNotes?: string;
     addedAt: Date;
+    actors: { firstName: string; lastName: string; fullName: string }[];
+    directors: { firstName: string; lastName: string; fullName: string }[];
+    releaseDate?: string;
+    runtime?: number;
 }
 
 type SyncPayload =
