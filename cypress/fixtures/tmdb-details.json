@@ -12,5 +12,14 @@
   "status": "Released",
   "tagline": "Your mind is the scene of the crime.",
   "vote_average": 8.4,
-  "genre_ids": [28, 878]
+  "genre_ids": [28, 878],
+  "credits": {
+    "cast": [
+      { "id": 6193, "name": "Leonardo DiCaprio", "order": 0 },
+      { "id": 24045, "name": "Joseph Gordon-Levitt", "order": 1 }
+    ],
+    "crew": [
+      { "id": 525, "name": "Christopher Nolan", "job": "Director" }
+    ]
+  }
 }

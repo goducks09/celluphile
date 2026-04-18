@@ -79,6 +79,16 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
     return { session: session as Session & { user: { id: string } } };
 }
 
+function serializeMovie(movie: any): SerializedMovie {
+    return {
+        ...movie,
+        _id: movie._id.toString(),
+        userId: movie.userId.toString(),
+        actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
+        directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
+    };
+}
+
 function revalidateLibrary(tmdbId?: number) {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/library');
@@ -221,13 +231,7 @@ export async function searchUserLibrary(
 
         return {
             success: true,
-            movies: pageMovies.map((movie) => ({
-                ...movie,
-                _id: movie._id.toString(),
-                userId: movie.userId.toString(),
-                actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
-                directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
-            })) satisfies SerializedMovie[],
+            movies: pageMovies.map(serializeMovie),
             hasMore,
             page
         };
@@ -297,18 +301,33 @@ export async function getMovieByTmdbId(tmdbId: number): Promise<{ success: boole
             return { success: false, message: 'Movie not found in your library.' };
         }
 
-        const serializedMovie: SerializedMovie = {
-            ...movie,
-            _id: movie._id.toString(),
-            userId: movie.userId.toString(),
-            actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
-            directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
-        };
-
-        return { success: true, movie: serializedMovie };
+        return { success: true, movie: serializeMovie(movie) };
     } catch (error) {
         console.error('Error fetching movie by TMDB ID:', error);
         return { success: false, message: 'Failed to find movie.' };
+    }
+}
+
+export async function getRandomMovie(): Promise<{ success: boolean; movie?: SerializedMovie; message?: string }> {
+    const { session, error } = await getValidatedSession('get a random movie');
+    if (error) return error;
+
+    try {
+        await dbConnect();
+
+        const [movie] = await Movie.aggregate([
+            { $match: { userId: new Types.ObjectId(session.user.id) } },
+            { $sample: { size: 1 } }
+        ]);
+
+        if (!movie) {
+            return { success: false, message: 'Your library is empty.' };
+        }
+
+        return { success: true, movie: serializeMovie(movie) };
+    } catch (err) {
+        console.error('Error fetching random movie:', err);
+        return { success: false, message: 'Failed to get a random movie.' };
     }
 }
 

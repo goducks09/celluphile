@@ -22,16 +22,18 @@ describe('E2E-5: Dashboard Page', () => {
   });
 
   // E2E-5.2: Contains search section
-  it('contains "Add Movies to Library" heading', () => {
+  it('contains "Actions" heading and add link', () => {
     cy.loginUser(testEmail, testPassword);
-    cy.contains('Add Movies to Library').should('be.visible');
+    cy.contains('Actions').should('be.visible');
+    cy.contains('Add a movie').should('be.visible');
   });
 
   // E2E-5.3: Contains library section
   it('contains library section', () => {
     // First add a movie so library section has content
     cy.loginUser(testEmail, testPassword);
-
+    
+    cy.visit('/dashboard/library');
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();
     cy.contains('Inception').should('be.visible');
@@ -39,10 +41,11 @@ describe('E2E-5: Dashboard Page', () => {
     cy.contains('button', 'Add to Library').first().click();
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
-    // Reload to see the server-rendered library
-    cy.reload();
+    // Return to dashboard to see the server-rendered library
+    cy.visit('/dashboard');
 
-    cy.contains('Your Movie Library').should('be.visible');
+    cy.contains('Your Library').should('be.visible');
+    cy.contains('Inception').should('be.visible');
   });
 
   // E2E-5.4: Error boundary rendering is tested via Jest component test

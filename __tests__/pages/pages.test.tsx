@@ -6,6 +6,15 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
+jest.mock('@/app/lib/actions', () => ({
+  getRandomMovie: jest.fn(),
+}));
+
+jest.mock('@/app/ui/random-movie', () => ({
+  __esModule: true,
+  default: ({ initialMovie }: any) => <div data-testid="random-movie-client">{initialMovie?.title}</div>,
+}));
+
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -80,6 +89,33 @@ describe('Page Components', () => {
       render(<OfflinePage />);
       const dashboardLink = screen.getByRole('link', { name: /return to library/i });
       expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+    });
+  });
+  describe('Random page', () => {
+    it('renders empty-state message with link to /dashboard/library if library is empty', async () => {
+      const { getRandomMovie } = require('@/app/lib/actions');
+      getRandomMovie.mockResolvedValue({ success: false, message: 'Your library is empty.' });
+      
+      const RandomPage = (await import('@/app/dashboard/random/page')).default;
+      render(await RandomPage());
+      
+      expect(screen.getByText('Your library is empty.')).toBeInTheDocument();
+      expect(screen.getByText('It looks like there are no movies available to pick from.')).toBeInTheDocument();
+      const link = screen.getByRole('link', { name: /go to library/i });
+      expect(link).toHaveAttribute('href', '/dashboard/library');
+    });
+
+    it('renders RandomMovieClient with returned movie prop', async () => {
+      const { getRandomMovie } = require('@/app/lib/actions');
+      getRandomMovie.mockResolvedValue({ 
+        success: true, 
+        movie: { title: 'Test Random Movie', tmdbId: 123 } 
+      });
+      
+      const RandomPage = (await import('@/app/dashboard/random/page')).default;
+      render(await RandomPage());
+      
+      expect(screen.getByTestId('random-movie-client')).toHaveTextContent('Test Random Movie');
     });
   });
 });

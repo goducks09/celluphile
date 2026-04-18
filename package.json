@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "test:clean": "jest --noStackTrace --json --outputFile=jest-results.json --onlyFailures",
     "test:watch": "jest --watch",
     "test:all": "npm run test && npm run e2e:headless",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
+    "cy:run": "NODE_ENV=test start-server-and-test 'npm run dev > /dev/null 2>&1' http://localhost:3000",
     "e2e": "NODE_ENV=test start-server-and-test dev http://localhost:3000 \"cypress open --e2e\"",
     "e2e:headless-verbose": "NODE_ENV=test start-server-and-test dev http://localhost:3000 \"cypress run --e2e\"",
     "e2e:headless": "NODE_ENV=test start-server-and-test 'npm run dev > /dev/null 2>&1' http://localhost:3000 'cypress run --e2e'"

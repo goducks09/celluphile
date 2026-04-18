@@ -27,6 +27,7 @@
 # misc
 .DS_Store
 *.pem
+/planning_docs
 
 # debug
 npm-debug.log*

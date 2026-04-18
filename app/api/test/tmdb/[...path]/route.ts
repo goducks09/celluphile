@@ -62,6 +62,7 @@ const MOCK_DETAILS: Record<number, object> = {
         status: 'Released',
         tagline: 'Your mind is the scene of the crime.',
         vote_average: 8.4,
+        credits: { cast: [{ id: 1, name: 'Leonardo DiCaprio', fullName: 'Leonardo DiCaprio', order: 0 }], crew: [{ id: 2, name: 'Christopher Nolan', fullName: 'Christopher Nolan', job: 'Director' }] }
     },
     550: {
         id: 550,
@@ -75,6 +76,7 @@ const MOCK_DETAILS: Record<number, object> = {
         status: 'Released',
         tagline: 'Mischief. Mayhem. Soap.',
         vote_average: 8.4,
+        credits: { cast: [{ id: 3, name: 'Brad Pitt', fullName: 'Brad Pitt', order: 0 }], crew: [{ id: 4, name: 'David Fincher', fullName: 'David Fincher', job: 'Director' }] }
     },
     603: {
         id: 603,
@@ -91,6 +93,7 @@ const MOCK_DETAILS: Record<number, object> = {
         status: 'Released',
         tagline: 'Welcome to the Real World.',
         vote_average: 8.2,
+        credits: { cast: [{ id: 5, name: 'Keanu Reeves', fullName: 'Keanu Reeves', order: 0 }], crew: [{ id: 6, name: 'Lana Wachowski', fullName: 'Lana Wachowski', job: 'Director' }] }
     },
     578: {
         id: 578,
@@ -108,6 +111,7 @@ const MOCK_DETAILS: Record<number, object> = {
         status: 'Released',
         tagline: "Don't go in the water.",
         vote_average: 7.7,
+        credits: { cast: [{ id: 7, name: 'Roy Scheider', fullName: 'Roy Scheider', order: 0 }], crew: [{ id: 8, name: 'Steven Spielberg', fullName: 'Steven Spielberg', job: 'Director' }] }
     },
 };
 

@@ -85,6 +85,7 @@ describe('E2E-4: Server Action Security', () => {
   it('User B cannot see User A movies', () => {
     // Log in as User A and add a movie
     cy.loginUser(testEmailA, testPassword);
+    cy.visit('/dashboard/library');
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();
     cy.contains('Inception').should('be.visible');
@@ -93,11 +94,13 @@ describe('E2E-4: Server Action Security', () => {
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Log out and wait for redirect to complete
+    cy.visit('/dashboard');
     cy.contains('button', 'Sign Out').click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');
 
     // Log in as User B
     cy.loginUser(testEmailB, testPassword);
+    cy.visit('/dashboard/library');
 
     // User B's library should be empty — they never added any movies.
     // This proves cross-user isolation: User A's movie does not leak to User B.
