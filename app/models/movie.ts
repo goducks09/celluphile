@@ -69,11 +69,11 @@ const MovieSchema = new Schema<IMovie>({
     maxlength: 500,
   },
   actors: {
-    type: [{ firstName: String, lastName: String, fullName: String }],
+    type: [{ firstName: String, lastName: String, fullName: String, _id: false }],
     default: [],
   },
   directors: {
-    type: [{ firstName: String, lastName: String, fullName: String }],
+    type: [{ firstName: String, lastName: String, fullName: String, _id: false }],
     default: [],
   },
   releaseDate: { type: String },

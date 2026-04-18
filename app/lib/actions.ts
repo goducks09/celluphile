@@ -10,7 +10,7 @@ import User from '../models/user';
 import { z } from 'zod';
 
 import type { Session } from 'next-auth';
-import type { IMovie } from '../models/movie';
+import type { IMovie, IActor, IDirector } from '../models/movie';
 
 import {
     addMovieSchema,
@@ -79,9 +79,10 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
     return { session: session as Session & { user: { id: string } } };
 }
 
-function revalidateLibrary() {
+function revalidateLibrary(tmdbId?: number) {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/library');
+    if (tmdbId) revalidatePath(`/dashboard/library/${tmdbId}`, 'page');
 }
 
 // ============================================================
@@ -139,7 +140,7 @@ export async function removeMovieFromLibrary(tmdbId: number) {
             return { success: false, message: 'Movie not found in your library.' };
         }
 
-        revalidateLibrary();
+        revalidateLibrary(parsed.data);
         return { success: true, message: 'Movie removed from library.' };
     } catch (error) {
         console.error('Error removing movie from library:', error);
@@ -224,6 +225,8 @@ export async function searchUserLibrary(
                 ...movie,
                 _id: movie._id.toString(),
                 userId: movie.userId.toString(),
+                actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
+                directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
             })) satisfies SerializedMovie[],
             hasMore,
             page
@@ -261,11 +264,51 @@ export async function updateMovieInLibrary(
             return { success: false, message: 'Movie not found in your library.' };
         }
 
-        revalidateLibrary();
+        revalidateLibrary(parsedId.data);
         return { success: true, message: 'Movie details updated.' };
     } catch (error) {
         console.error('Error updating movie in library:', error);
         return { success: false, message: 'Failed to update movie details.' };
+    }
+}
+
+// ============================================================
+// Movie actions - Fetching
+// ============================================================
+
+export async function getMovieByTmdbId(tmdbId: number): Promise<{ success: boolean; movie?: SerializedMovie; message?: string }> {
+    const { session, error } = await getValidatedSession('view a movie');
+    if (error) return error;
+
+    const parsedId = movieIdSchema.safeParse(tmdbId);
+    if (!parsedId.success) {
+        return { success: false, message: 'Invalid movie ID.' };
+    }
+
+    try {
+        await dbConnect();
+
+        const movie = await Movie.findOne({
+            userId: new Types.ObjectId(session.user.id),
+            tmdbId: parsedId.data,
+        }).lean();
+
+        if (!movie) {
+            return { success: false, message: 'Movie not found in your library.' };
+        }
+
+        const serializedMovie: SerializedMovie = {
+            ...movie,
+            _id: movie._id.toString(),
+            userId: movie.userId.toString(),
+            actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
+            directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
+        };
+
+        return { success: true, movie: serializedMovie };
+    } catch (error) {
+        console.error('Error fetching movie by TMDB ID:', error);
+        return { success: false, message: 'Failed to find movie.' };
     }
 }
 

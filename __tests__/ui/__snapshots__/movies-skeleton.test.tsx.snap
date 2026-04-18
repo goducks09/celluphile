@@ -9,29 +9,35 @@ exports[`MoviesSkeleton snapshot test 1`] = `
   >
     <div
       aria-label="Loading"
-      class="relative group rounded overflow-hidden shadow-sm bg-gray-200 animate-pulse aspect-[2/3]"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
       role="status"
+      style="background: var(--background-card);"
     >
       <div
-        class="absolute inset-0 bg-gray-300"
+        class="absolute inset-0"
+        style="background: var(--background-input);"
       />
     </div>
     <div
       aria-label="Loading"
-      class="relative group rounded overflow-hidden shadow-sm bg-gray-200 animate-pulse aspect-[2/3]"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
       role="status"
+      style="background: var(--background-card);"
     >
       <div
-        class="absolute inset-0 bg-gray-300"
+        class="absolute inset-0"
+        style="background: var(--background-input);"
       />
     </div>
     <div
       aria-label="Loading"
-      class="relative group rounded overflow-hidden shadow-sm bg-gray-200 animate-pulse aspect-[2/3]"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
       role="status"
+      style="background: var(--background-card);"
     >
       <div
-        class="absolute inset-0 bg-gray-300"
+        class="absolute inset-0"
+        style="background: var(--background-input);"
       />
     </div>
   </div>

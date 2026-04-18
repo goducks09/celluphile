@@ -5,10 +5,8 @@ import type { SerializedMovie } from '@/app/lib/actions';
 
 // Mock actions
 const mockSearchUserLibrary = jest.fn();
-const mockRemoveMovieFromLibrary = jest.fn();
 jest.mock('@/app/lib/actions', () => ({
   searchUserLibrary: (...args: any[]) => mockSearchUserLibrary(...args),
-  removeMovieFromLibrary: (...args: any[]) => mockRemoveMovieFromLibrary(...args),
 }));
 
 // Mock Dexie db
@@ -90,8 +88,10 @@ const createMovie = (overrides: Partial<SerializedMovie> = {}): SerializedMovie 
   genre: ['Drama'],
   quality: 'Blu-ray',
   addedAt: new Date('2024-01-01'),
+  actors: [],
+  directors: [],
   ...overrides,
-});
+} as SerializedMovie);
 
 describe('LibraryFilterAndList', () => {
   beforeEach(() => {
@@ -219,86 +219,7 @@ describe('LibraryFilterAndList', () => {
     });
   });
 
-  it('delete (online) — optimistic removal + server call', async () => {
-    // Use real timers for this test since userEvent doesn't work with fake timers
-    jest.useRealTimers();
-    const user = userEvent.setup();
-    mockRemoveMovieFromLibrary.mockResolvedValue({ success: true, message: 'Movie removed.' });
 
-    const movies = [createMovie()];
-    await act(async () => {
-      render(<LibraryFilterAndList initialMovies={movies} />);
-    });
-
-    expect(screen.getByText('Fight Club')).toBeInTheDocument();
-
-    // Click delete button
-    const deleteBtn = screen.getByTitle('Remove from library');
-    await user.click(deleteBtn);
-
-    // Movie should be optimistically removed
-    await waitFor(() => {
-      expect(screen.queryByText('Fight Club')).not.toBeInTheDocument();
-    });
-
-    expect(mockRemoveMovieFromLibrary).toHaveBeenCalledWith(550);
-  });
-
-  it('delete fails — movie restored in UI + error toast', async () => {
-    jest.useRealTimers();
-    const user = userEvent.setup();
-    mockRemoveMovieFromLibrary.mockResolvedValue({ success: false, message: 'Failed to remove movie.' });
-
-    const movies = [createMovie()];
-    await act(async () => {
-      render(<LibraryFilterAndList initialMovies={movies} />);
-    });
-
-    const deleteBtn = screen.getByTitle('Remove from library');
-    await user.click(deleteBtn);
-
-    // Movie should be restored after failed delete
-    await waitFor(() => {
-      expect(screen.getByText('Fight Club')).toBeInTheDocument();
-    });
-
-    expect(mockToast.error).toHaveBeenCalledWith('Failed to remove movie.');
-  });
-
-  it('delete (offline) — Dexie delete + sync queue entry', async () => {
-    jest.useRealTimers();
-    const user = userEvent.setup();
-    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
-
-    // Need to re-mock db.movies.where for this test specifically
-    const mockWhereDelete = jest.fn().mockResolvedValue(undefined);
-    const mockEquals = jest.fn().mockReturnValue({ delete: mockWhereDelete });
-    const mockWhere = jest.fn().mockReturnValue({ equals: mockEquals });
-
-    // We need to get the module and override
-    const dbModule = require('@/app/lib/db-client');
-    dbModule.db.movies.where = mockWhere;
-
-    const movies = [createMovie()];
-    await act(async () => {
-      render(<LibraryFilterAndList initialMovies={movies} />);
-    });
-
-    const deleteBtn = screen.getByTitle('Remove from library');
-    await user.click(deleteBtn);
-
-    await waitFor(() => {
-      expect(mockWhere).toHaveBeenCalledWith('tmdbId');
-      expect(mockEquals).toHaveBeenCalledWith(550);
-      expect(mockWhereDelete).toHaveBeenCalled();
-      expect(mockDbSyncQueueAdd).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'remove',
-          payload: { tmdbId: 550 },
-        })
-      );
-    });
-  });
 
   it('empty results shows "No movies found" message', async () => {
     await act(async () => {

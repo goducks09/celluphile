@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { searchUserLibrary, removeMovieFromLibrary, type SerializedMovie } from '@/app/lib/actions';
+import Link from 'next/link';
+import { searchUserLibrary, type SerializedMovie } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
@@ -135,44 +136,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
         return () => observer.disconnect();
     }, [loadMore]);
 
-    const handleDelete = async (tmdbId: number) => {
-        // Optimistically remove from UI
-        const movieToRemove = movies.find(m => m.tmdbId === tmdbId);
-        setMovies(prev => prev.filter(m => m.tmdbId !== tmdbId));
 
-        if (!navigator.onLine) {
-            try {
-                // Delete from local cache and queue sync operation
-                await db.movies.where('tmdbId').equals(tmdbId).delete();
-                await db.syncQueue.add({
-                    action: 'remove',
-                    payload: { tmdbId },
-                    timestamp: Date.now()
-                });
-                toast.success('Movie deleted offline. Will sync when reconnected.');
-            } catch (err) {
-                console.error('Failed to queue offline delete', err);
-                toast.error('Failed to delete movie offline.');
-            }
-            return;
-        }
-
-        try {
-            const result = await removeMovieFromLibrary(tmdbId);
-            if (!result.success) {
-                // Re-fetch to restore state if it failed
-                if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
-                toast.error(result.message || 'Failed to remove movie.');
-            } else {
-                await db.movies.where('tmdbId').equals(tmdbId).delete();
-                toast.success('Movie removed from library.');
-            }
-        } catch (err) {
-            if (movieToRemove) setMovies(prev => [...prev, movieToRemove]);
-            console.error('Failed to remove movie:', err);
-            toast.error('An error occurred while removing the movie.');
-        }
-    };
 
     return (
         <div className="w-full max-w-6xl mx-auto my-8">
@@ -214,7 +178,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
                     {movies.map((movie) => (
-                        <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
+                        <Link key={movie.tmdbId} href={`/dashboard/library/${movie.tmdbId}`} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                             {movie.poster ? (
                                 <div className="relative w-full h-80">
                                     <Image
@@ -254,18 +218,9 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                 </div>
                                 <div className="text-xs mt-4 flex justify-between items-center" style={{ color: 'var(--foreground-muted)' }}>
                                     <span>Added: {formatDate(movie.addedAt)}</span>
-                                    <button
-                                        onClick={() => handleDelete(movie.tmdbId)}
-                                        className="text-red-500 hover:text-red-700 p-1"
-                                        title="Remove from library"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                     {loadingMore && <MoviesSkeleton count={5} wrapper={false} />}
                 </div>

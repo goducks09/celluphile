@@ -103,7 +103,7 @@ export default function HomeDashboard({
                 ) : (
                     <div className="home-movie-grid">
                         {filteredMovies.map((movie) => (
-                            <div key={movie.tmdbId} className="home-movie-card">
+                            <Link key={movie.tmdbId} href={`/dashboard/library/${movie.tmdbId}`} className="home-movie-card">
                                 {/* Quality Badge */}
                                 <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality] || 'bg-gray-500'}`}>
                                     {movie.quality}
@@ -129,7 +129,7 @@ export default function HomeDashboard({
                                         {new Date(movie.addedAt).getFullYear()}
                                     </span>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}
