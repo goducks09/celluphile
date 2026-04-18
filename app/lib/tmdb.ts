@@ -3,6 +3,7 @@
 import { auth } from '@/auth';
 import { z } from 'zod';
 import { movieIdSchema, searchQuerySchema } from './schemas';
+import type { TMDBSearchResponse, TMDBMovieDetails } from './tmdb-utils';
 
 const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL || 'https://api.themoviedb.org/3';
 const getFetchOptions = () => ({
@@ -13,47 +14,10 @@ const getFetchOptions = () => ({
     },
 });
 
-export interface TMDBMovie {
-    id: number;
-    title: string;
-    overview: string;
-    poster_path: string | null;
-    release_date: string;
-    genre_ids: number[];
-    vote_average: number;
-}
-
-export interface TMDBSearchResponse {
-    page: number;
-    results: TMDBMovie[];
-    total_pages: number;
-    total_results: number;
-}
-
-export interface TMDBCrewMember {
-  id: number;
-  name: string;
-  job: string;
-}
-
-export interface TMDBCastMember {
-  id: number;
-  name: string;
-  order: number;
-}
-
-export interface TMDBCredits {
-  cast: TMDBCastMember[];
-  crew: TMDBCrewMember[];
-}
-
-export interface TMDBMovieDetails extends TMDBMovie {
-    genres: { id: number; name: string }[];
-    runtime: number | null;
-    status: string;
-    tagline: string;
-    credits: TMDBCredits;
-}
+// All TMDB type definitions live in ./tmdb-utils to keep this server-action
+// file free of synchronous exports (Next.js requires all exports from a
+// 'use server' file to be async functions).
+export type { TMDBMovie, TMDBSearchResponse, TMDBMovieDetails } from './tmdb-utils';
 
 /**
  * Search for movies by title
@@ -126,20 +90,3 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
     }
 }
 
-export function extractCredits(details: TMDBMovieDetails, maxCast = 10) {
-  const splitName = (name: string) => {
-    const parts = name.trim().split(' ');
-    const lastName = parts.length > 1 ? parts.pop()! : '';
-    return { firstName: parts.join(' '), lastName, fullName: name.trim() };
-  };
-
-  const actors = details.credits.cast
-    .slice(0, maxCast)
-    .map(c => splitName(c.name));
-
-  const directors = details.credits.crew
-    .filter(c => c.job === 'Director')
-    .map(c => splitName(c.name));
-
-  return { actors, directors };
-}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { searchMovies, getMovieDetails, extractCredits, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
+import { searchMovies, getMovieDetails, TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb';
+import { extractCredits } from '@/app/lib/tmdb-utils';
 import { addMovieToLibrary } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';

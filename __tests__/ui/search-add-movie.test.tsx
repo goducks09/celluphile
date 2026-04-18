@@ -2,13 +2,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SearchAddMovie from '@/app/ui/search-add-movie';
 
-// Mock tmdb
+// Mock tmdb server actions
 const mockSearchMovies = jest.fn();
 const mockGetMovieDetails = jest.fn();
-const mockExtractCredits = jest.fn();
 jest.mock('@/app/lib/tmdb', () => ({
   searchMovies: (...args: any[]) => mockSearchMovies(...args),
   getMovieDetails: (...args: any[]) => mockGetMovieDetails(...args),
+}));
+
+// Mock tmdb-utils (pure helpers)
+const mockExtractCredits = jest.fn();
+jest.mock('@/app/lib/tmdb-utils', () => ({
   extractCredits: (...args: any[]) => mockExtractCredits(...args),
 }));
 
