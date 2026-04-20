@@ -7,10 +7,14 @@ import webpush from 'web-push';
 import dbConnect from './mongoose';
 import Movie from '../models/movie';
 import User from '../models/user';
+import UserMovie from '../models/userMovie';
 import { z } from 'zod';
+import { getMovieDetails } from './tmdb';
+import { extractCredits } from './tmdb-utils';
 
 import type { Session } from 'next-auth';
 import type { IMovie, IActor, IDirector } from '../models/movie';
+import type { Quality } from './schemas';
 
 import {
     addMovieSchema,
@@ -28,11 +32,12 @@ import {
 // Types
 // ============================================================
 
-// Represents a movie returned from the server as a plain serialisable object
-// rather than a Mongoose Document
-export type SerializedMovie = Omit<IMovie, '_id' | 'userId' | keyof Document> & {
+export type SerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | keyof Document> & {
     _id: string;
     userId: string;
+    quality: Quality;
+    addedAt: Date;
+    customNotes?: string;
 };
 
 type SessionSuccess = { session: Session & { user: { id: string } }; error?: never };
@@ -79,13 +84,25 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
     return { session: session as Session & { user: { id: string } } };
 }
 
-function serializeMovie(movie: any): SerializedMovie {
+function serializeMovie(doc: any): SerializedMovie {
+    const userMovie = doc.userMovie || doc;
+    const movieDetails = doc.movieDetails || doc;
+
     return {
-        ...movie,
-        _id: movie._id.toString(),
-        userId: movie.userId.toString(),
-        actors: movie.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
-        directors: movie.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
+        _id: userMovie._id.toString(),
+        userId: userMovie.userId.toString(),
+        tmdbId: userMovie.tmdbId,
+        quality: userMovie.quality,
+        addedAt: userMovie.addedAt,
+        customNotes: userMovie.customNotes,
+
+        title: movieDetails.title,
+        poster: movieDetails.poster || '',
+        genre: movieDetails.genre || [],
+        actors: movieDetails.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
+        directors: movieDetails.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
+        releaseDate: movieDetails.releaseDate,
+        runtime: movieDetails.runtime,
     };
 }
 
@@ -110,13 +127,47 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
 
     try {
         await dbConnect();
+        
+        const { tmdbId, quality, customNotes } = parsed.data;
+        const userId = new Types.ObjectId(session.user.id);
 
-        const newMovie = new Movie({
-            userId: new Types.ObjectId(session.user.id),
-            ...parsed.data,
+        const existingUserMovie = await UserMovie.findOne({ userId, tmdbId });
+        if (existingUserMovie) {
+            return { success: false, message: 'Movie already exists in your library.' };
+        }
+
+        let movie = await Movie.findOne({ tmdbId });
+        
+        if (!movie) {
+            const tmdbDetails = await getMovieDetails(tmdbId);
+            const { actors, directors } = extractCredits(tmdbDetails);
+            
+            movie = await Movie.findOneAndUpdate(
+                { tmdbId },
+                {
+                    $setOnInsert: {
+                        title: tmdbDetails.title,
+                        poster: tmdbDetails.poster_path || '',
+                        genre: tmdbDetails.genres.map(g => g.name),
+                        actors,
+                        directors,
+                        releaseDate: tmdbDetails.release_date,
+                        runtime: tmdbDetails.runtime !== null ? tmdbDetails.runtime : undefined,
+                        lastFetched: new Date()
+                    }
+                },
+                { upsert: true, new: true }
+            );
+        }
+
+        const newUserMovie = new UserMovie({
+            userId,
+            tmdbId,
+            quality,
+            customNotes
         });
 
-        await newMovie.save();
+        await newUserMovie.save();
         revalidateLibrary();
 
         return { success: true, message: 'Movie added to library successfully!' };
@@ -141,7 +192,7 @@ export async function removeMovieFromLibrary(tmdbId: number) {
     try {
         await dbConnect();
 
-        const result = await Movie.findOneAndDelete({
+        const result = await UserMovie.findOneAndDelete({
             userId: new Types.ObjectId(session.user.id),
             tmdbId: parsed.data,
         });
@@ -184,50 +235,85 @@ export async function searchUserLibrary(
     try {
         await dbConnect();
 
-        type MovieFilterQuery = {
-            userId: Types.ObjectId;
-            $text?: { $search: string };
-            genre?: { $in: string[] };
-            quality?: { $in: string[] };
-        };
-
-        const userId = new Types.ObjectId(session.user.id);
-        const filterQuery: MovieFilterQuery = { userId };
-
+        const pipeline: any[] = [];
+        
         if (safeQuery && safeQuery.trim() !== '') {
-            filterQuery.$text = { $search: safeQuery };
-        }
-
-        if (safeFilters?.genre && safeFilters.genre.length > 0) {
-            filterQuery.genre = { $in: safeFilters.genre };
-        }
-
-        if (safeFilters?.quality && safeFilters.quality.length > 0) {
-            filterQuery.quality = { $in: safeFilters.quality };
-        }
-
-        type MovieSortConfig = Record<string, 1 | -1 | { $meta: 'textScore' }>;
-        let sortConfig: MovieSortConfig = {};
-        if (safeQuery && safeQuery.trim() !== '') {
-            sortConfig = { score: { $meta: 'textScore' } };
-        } else if (safeSortOpts) {
-            sortConfig[safeSortOpts.field] = safeSortOpts.order;
+            // Start with Movie collection for $text index support
+            pipeline.push({ $match: { $text: { $search: safeQuery } } });
+            
+            if (safeFilters?.genre && safeFilters.genre.length > 0) {
+                pipeline.push({ $match: { genre: { $in: safeFilters.genre } } });
+            }
+            
+            pipeline.push({
+                $lookup: {
+                    from: 'usermovies',
+                    let: { movieTmdbId: '$tmdbId' },
+                    pipeline: [
+                         { $match: {
+                             $expr: { $and: [
+                                 { $eq: ['$tmdbId', '$$movieTmdbId'] },
+                                 { $eq: ['$userId', new Types.ObjectId(session.user.id)] }
+                             ]}
+                         }}
+                    ],
+                    as: 'userMovie'
+                }
+            });
+            pipeline.push({ $unwind: '$userMovie' });
+            
+            if (safeFilters?.quality && safeFilters.quality.length > 0) {
+                pipeline.push({ $match: { 'userMovie.quality': { $in: safeFilters.quality } } });
+            }
+            
+            pipeline.push({ $addFields: { score: { $meta: 'textScore' } } });
+            pipeline.push({ $sort: { score: -1 } });
+            pipeline.push({ $project: { score: 0 } });
         } else {
-            sortConfig = { addedAt: -1 };
+            // Start with UserMovie for optimal performance when not text searching
+            const userMatch: any = { userId: new Types.ObjectId(session.user.id) };
+            if (safeFilters?.quality && safeFilters.quality.length > 0) {
+                userMatch.quality = { $in: safeFilters.quality };
+            }
+            pipeline.push({ $match: userMatch });
+            
+            pipeline.push({
+                $lookup: {
+                    from: 'movies',
+                    localField: 'tmdbId',
+                    foreignField: 'tmdbId',
+                    as: 'movieDetails'
+                }
+            });
+            pipeline.push({ $unwind: '$movieDetails' });
+            
+            if (safeFilters?.genre && safeFilters.genre.length > 0) {
+                pipeline.push({ $match: { 'movieDetails.genre': { $in: safeFilters.genre } } });
+            }
+            
+            let sortConfig: any = {};
+            if (safeSortOpts) {
+                if (safeSortOpts.field === 'title' || safeSortOpts.field === 'release_date') {
+                    sortConfig = { [`movieDetails.${safeSortOpts.field}`]: safeSortOpts.order };
+                } else if (safeSortOpts.field === 'addedAt') {
+                    sortConfig = { addedAt: safeSortOpts.order };
+                }
+            } else {
+                sortConfig = { addedAt: -1 };
+            }
+            pipeline.push({ $sort: sortConfig });
         }
 
-        let mongooseQuery = Movie.find(filterQuery).sort(sortConfig);
-
-        if (safeQuery && safeQuery.trim() !== '') {
-            mongooseQuery = mongooseQuery.select({ score: { $meta: 'textScore' } });
-        }
-
-        // Setup pagination
         const skip = (page - 1) * limit;
+        pipeline.push({ $skip: skip });
+        pipeline.push({ $limit: limit + 1 });
 
-        const movies = await mongooseQuery.skip(skip).limit(limit + 1).lean();
-        const hasMore = movies.length > limit;
-        const pageMovies = hasMore ? movies.slice(0, limit) : movies;
+        const rawResult = safeQuery && safeQuery.trim() !== '' 
+            ? await Movie.aggregate(pipeline) 
+            : await UserMovie.aggregate(pipeline);
+
+        const hasMore = rawResult.length > limit;
+        const pageMovies = hasMore ? rawResult.slice(0, limit) : rawResult;
 
         return {
             success: true,
@@ -258,7 +344,7 @@ export async function updateMovieInLibrary(
     try {
         await dbConnect();
 
-        const result = await Movie.findOneAndUpdate(
+        const result = await UserMovie.findOneAndUpdate(
             { userId: new Types.ObjectId(session.user.id), tmdbId: parsedId.data },
             { $set: parsedData.data },
             { new: true }
@@ -292,16 +378,24 @@ export async function getMovieByTmdbId(tmdbId: number): Promise<{ success: boole
     try {
         await dbConnect();
 
-        const movie = await Movie.findOne({
+        const userMovie = await UserMovie.findOne({
             userId: new Types.ObjectId(session.user.id),
             tmdbId: parsedId.data,
         }).lean();
 
-        if (!movie) {
+        if (!userMovie) {
             return { success: false, message: 'Movie not found in your library.' };
         }
 
-        return { success: true, movie: serializeMovie(movie) };
+        const movieDetails = await Movie.findOne({
+            tmdbId: parsedId.data,
+        }).lean();
+
+        if (!movieDetails) {
+            return { success: false, message: 'Movie details not found.' };
+        }
+
+        return { success: true, movie: serializeMovie({ ...userMovie, movieDetails }) };
     } catch (error) {
         console.error('Error fetching movie by TMDB ID:', error);
         return { success: false, message: 'Failed to find movie.' };
@@ -315,16 +409,25 @@ export async function getRandomMovie(): Promise<{ success: boolean; movie?: Seri
     try {
         await dbConnect();
 
-        const [movie] = await Movie.aggregate([
+        const [userMovie] = await UserMovie.aggregate([
             { $match: { userId: new Types.ObjectId(session.user.id) } },
-            { $sample: { size: 1 } }
+            { $sample: { size: 1 } },
+            {
+                $lookup: {
+                    from: 'movies',
+                    localField: 'tmdbId',
+                    foreignField: 'tmdbId',
+                    as: 'movieDetails'
+                }
+            },
+            { $unwind: '$movieDetails' }
         ]);
 
-        if (!movie) {
+        if (!userMovie) {
             return { success: false, message: 'Your library is empty.' };
         }
 
-        return { success: true, movie: serializeMovie(movie) };
+        return { success: true, movie: serializeMovie(userMovie) };
     } catch (err) {
         console.error('Error fetching random movie:', err);
         return { success: false, message: 'Failed to get a random movie.' };
@@ -353,7 +456,7 @@ export async function getLibraryStats(): Promise<{ success: boolean; message?: s
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        const [result] = await Movie.aggregate([
+        const [result] = await UserMovie.aggregate([
             { $match: { userId } },
             {
                 $group: {

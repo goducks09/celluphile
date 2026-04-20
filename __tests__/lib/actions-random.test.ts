@@ -1,6 +1,7 @@
 import { getRandomMovie } from '@/app/lib/actions';
 import { auth } from '@/auth';
 import Movie from '@/app/models/movie';
+import UserMovie from '@/app/models/userMovie';
 
 jest.mock('@/auth', () => ({
   auth: jest.fn(),
@@ -38,6 +39,14 @@ jest.mock('@/app/models/movie', () => ({
     },
 }));
 
+// Fully mock the userMovie model
+jest.mock('@/app/models/userMovie', () => ({
+    __esModule: true,
+    default: {
+        aggregate: jest.fn(),
+    },
+}));
+
 // Mock the user model to prevent it from importing real mongoose
 jest.mock('@/app/models/user', () => ({
     __esModule: true,
@@ -65,14 +74,23 @@ describe('getRandomMovie action', () => {
     it('returns empty library message if aggregation returns no results', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
         
-        (Movie.aggregate as jest.Mock).mockResolvedValue([]);
+        (UserMovie.aggregate as jest.Mock).mockResolvedValue([]);
         
         const result = await getRandomMovie();
         expect(result.success).toBe(false);
         expect(result.message).toBe('Your library is empty.');
-        expect(Movie.aggregate).toHaveBeenCalledWith([
+        expect(UserMovie.aggregate).toHaveBeenCalledWith([
             { $match: { userId: expect.any(Object) } },
-            { $sample: { size: 1 } }
+            { $sample: { size: 1 } },
+            {
+                $lookup: {
+                    from: 'movies',
+                    localField: 'tmdbId',
+                    foreignField: 'tmdbId',
+                    as: 'movieDetails'
+                }
+            },
+            { $unwind: '$movieDetails' }
         ]);
     });
 
@@ -83,13 +101,15 @@ describe('getRandomMovie action', () => {
             _id: { toString: () => 'abc123def456abc123def456' },
             userId: { toString: () => '507f1f77bcf86cd799439011' },
             tmdbId: 550,
-            title: 'Random Movie',
-            actors: [{ firstName: 'Tom', lastName: 'Hanks', fullName: 'Tom Hanks' }],
-            directors: [{ firstName: 'Steven', lastName: 'Spielberg', fullName: 'Steven Spielberg' }],
-            runtime: 142,
-            releaseDate: '1993-06-11',
+            movieDetails: {
+                title: 'Random Movie',
+                actors: [{ firstName: 'Tom', lastName: 'Hanks', fullName: 'Tom Hanks' }],
+                directors: [{ firstName: 'Steven', lastName: 'Spielberg', fullName: 'Steven Spielberg' }],
+                runtime: 142,
+                releaseDate: '1993-06-11',
+            }
         };
-        (Movie.aggregate as jest.Mock).mockResolvedValue([mockMovie]);
+        (UserMovie.aggregate as jest.Mock).mockResolvedValue([mockMovie]);
         
         const result = await getRandomMovie();
         expect(result.success).toBe(true);
@@ -102,7 +122,7 @@ describe('getRandomMovie action', () => {
     it('returns error message when database throws', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
 
-        (Movie.aggregate as jest.Mock).mockImplementation(() => {
+        (UserMovie.aggregate as jest.Mock).mockImplementation(() => {
             throw new Error('DB connection lost');
         });
 

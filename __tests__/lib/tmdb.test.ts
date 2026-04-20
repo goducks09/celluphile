@@ -8,11 +8,17 @@ jest.mock('@/auth', () => ({
 
 // Save original fetch
 const originalFetch = global.fetch;
+let consoleSpy: jest.SpyInstance;
 
 beforeEach(() => {
   // Clear env and mocks before each test
   process.env.TMDB_API_READ_ACCESS_TOKEN = 'test-token-abc123';
   jest.restoreAllMocks();
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  if (consoleSpy) consoleSpy.mockRestore();
 });
 
 afterAll(() => {

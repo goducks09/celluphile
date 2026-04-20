@@ -11,9 +11,6 @@ import {
 describe('addMovieSchema', () => {
   const validMovie = {
     tmdbId: 550,
-    title: 'Fight Club',
-    poster: '/pB8BM7pdSp6B6Ih7QI4S2t0POI.jpg',
-    genre: ['Drama'],
     quality: 'Blu-ray' as const,
   };
 
@@ -28,17 +25,6 @@ describe('addMovieSchema', () => {
       customNotes: 'Great movie!',
     });
     expect(result.success).toBe(true);
-  });
-
-  it('missing title is rejected', () => {
-    const { title, ...noTitle } = validMovie;
-    const result = addMovieSchema.safeParse(noTitle);
-    expect(result.success).toBe(false);
-  });
-
-  it('empty title is rejected', () => {
-    const result = addMovieSchema.safeParse({ ...validMovie, title: '' });
-    expect(result.success).toBe(false);
   });
 
   it('invalid quality is rejected', () => {

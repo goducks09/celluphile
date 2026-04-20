@@ -1,6 +1,7 @@
 import { getMovieByTmdbId } from '@/app/lib/actions';
 import { auth } from '@/auth';
 import Movie from '@/app/models/movie';
+import UserMovie from '@/app/models/userMovie';
 
 jest.mock('@/auth', () => ({
   auth: jest.fn(),
@@ -32,6 +33,14 @@ jest.mock('mongoose', () => {
 
 // Fully mock the movie model (no requireActual to avoid loading real mongoose)
 jest.mock('@/app/models/movie', () => ({
+    __esModule: true,
+    default: {
+        findOne: jest.fn(),
+    },
+}));
+
+// Fully mock the userMovie model
+jest.mock('@/app/models/userMovie', () => ({
     __esModule: true,
     default: {
         findOne: jest.fn(),
@@ -84,12 +93,12 @@ describe('getMovieByTmdbId action', () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
         
         const mockLean = jest.fn().mockResolvedValue(null);
-        (Movie.findOne as jest.Mock).mockReturnValue({ lean: mockLean });
+        (UserMovie.findOne as jest.Mock).mockReturnValue({ lean: mockLean });
         
         const result = await getMovieByTmdbId(550);
         expect(result.success).toBe(false);
         expect(result.message).toBe('Movie not found in your library.');
-        expect(Movie.findOne).toHaveBeenCalledWith({
+        expect(UserMovie.findOne).toHaveBeenCalledWith({
             userId: expect.any(Object),
             tmdbId: 550,
         });
@@ -98,17 +107,21 @@ describe('getMovieByTmdbId action', () => {
     it('returns serialized movie with _id and userId as strings', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
         
-        const mockLean = jest.fn().mockResolvedValue({
+        const mockLeanUser = jest.fn().mockResolvedValue({
             _id: { toString: () => 'abc123def456abc123def456' },
             userId: { toString: () => '507f1f77bcf86cd799439011' },
             tmdbId: 550,
+        });
+        (UserMovie.findOne as jest.Mock).mockReturnValue({ lean: mockLeanUser });
+
+        const mockLeanMovie = jest.fn().mockResolvedValue({
             title: 'Found Movie',
             actors: [{ firstName: 'Tom', lastName: 'Hanks', fullName: 'Tom Hanks' }],
             directors: [{ firstName: 'Steven', lastName: 'Spielberg', fullName: 'Steven Spielberg' }],
             runtime: 142,
             releaseDate: '1993-06-11',
         });
-        (Movie.findOne as jest.Mock).mockReturnValue({ lean: mockLean });
+        (Movie.findOne as jest.Mock).mockReturnValue({ lean: mockLeanMovie });
         
         const result = await getMovieByTmdbId(550);
         expect(result.success).toBe(true);
@@ -126,7 +139,7 @@ describe('getMovieByTmdbId action', () => {
     it('returns error message when database throws', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
 
-        (Movie.findOne as jest.Mock).mockImplementation(() => {
+        (UserMovie.findOne as jest.Mock).mockImplementation(() => {
             throw new Error('DB connection lost');
         });
 
