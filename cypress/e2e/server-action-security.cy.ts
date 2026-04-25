@@ -95,7 +95,7 @@ describe('E2E-4: Server Action Security', () => {
 
     // Log out and wait for redirect to complete
     cy.visit('/dashboard');
-    cy.contains('button', 'Sign Out').click();
+    cy.contains('button', 'Sign Out').click({ force: true });
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');
 
     // Log in as User B

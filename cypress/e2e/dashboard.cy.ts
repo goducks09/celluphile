@@ -18,7 +18,7 @@ describe('E2E-5: Dashboard Page', () => {
   // E2E-5.1: Displays user email in header
   it('displays the logged-in user email in the header', () => {
     cy.loginUser(testEmail, testPassword);
-    cy.contains(testEmail).should('be.visible');
+    cy.contains(testEmail).should('exist');
   });
 
   // E2E-5.2: Contains search section

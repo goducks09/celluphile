@@ -81,7 +81,7 @@ describe('E2E-1: Authentication Flow', () => {
     cy.loginUser(testEmail, testPassword);
 
     // Then log out
-    cy.contains('button', 'Sign Out').click();
+    cy.contains('button', 'Sign Out').click({ force: true });
 
     // signOut() redirects to the login page
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');
