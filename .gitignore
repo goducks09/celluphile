@@ -50,3 +50,10 @@ next-env.d.ts
 .agents
 # next-agents-md
 .next-docs/
+
+# Python
+scripts/.venv/
+scripts/__pycache__/
+/scripts/.venv/
+scripts/.venv/**
+/scripts/.venv/**

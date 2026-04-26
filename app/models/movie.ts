@@ -16,11 +16,17 @@ export interface IMovie {
   tmdbId: number;
   title: string;
   poster: string;
+  overview: string;
   genre: string[];
+  keywords: string[];
   actors: IActor[];
   directors: IDirector[];
   releaseDate?: string;
   runtime?: number;
+  voteAverage?: number;
+  voteCount?: number;
+  popularity?: number;
+  embedding?: number[];
   lastFetched: Date;
 }
 
@@ -42,7 +48,15 @@ const MovieSchema = new Schema<IMovie>({
     type: String,
     default: '',
   },
+  overview: {
+    type: String,
+    default: '',
+  },
   genre: {
+    type: [String],
+    default: [],
+  },
+  keywords: {
     type: [String],
     default: [],
   },
@@ -56,6 +70,13 @@ const MovieSchema = new Schema<IMovie>({
   },
   releaseDate: { type: String },
   runtime: { type: Number },
+  voteAverage: { type: Number },
+  voteCount: { type: Number },
+  popularity: { type: Number },
+  embedding: {
+    type: [Number],
+    default: null,
+  },
   lastFetched: {
     type: Date,
     default: Date.now,

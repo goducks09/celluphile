@@ -5,20 +5,22 @@
  */
 
 export interface TMDBMovie {
-    id: number;
-    title: string;
-    overview: string;
-    poster_path: string | null;
-    release_date: string;
-    genre_ids: number[];
-    vote_average: number;
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  release_date: string;
+  genre_ids: number[];
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
 }
 
 export interface TMDBSearchResponse {
-    page: number;
-    results: TMDBMovie[];
-    total_pages: number;
-    total_results: number;
+  page: number;
+  results: TMDBMovie[];
+  total_pages: number;
+  total_results: number;
 }
 
 export interface TMDBCrewMember {
@@ -39,18 +41,19 @@ export interface TMDBCredits {
 }
 
 export interface TMDBMovieDetails extends TMDBMovie {
-    genres: { id: number; name: string }[];
-    runtime: number | null;
-    status: string;
-    tagline: string;
-    credits: TMDBCredits;
+  genres: { id: number; name: string }[];
+  runtime: number | null;
+  status: string;
+  tagline: string;
+  credits: TMDBCredits;
+  keywords?: { keywords: { id: number; name: string }[] };
 }
 
 /**
  * Extracts cast and crew from a TMDBMovieDetails object.
  * Pure synchronous helper — no server action, no I/O.
  */
-export function extractCredits(details: TMDBMovieDetails, maxCast = 10) {
+export function extractCredits(details: TMDBMovieDetails, maxCast = 5) {
   const splitName = (name: string) => {
     const parts = name.trim().split(' ');
     const lastName = parts.length > 1 ? parts.pop()! : '';

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { movieIdSchema, searchQuerySchema } from './schemas';
 import type { TMDBSearchResponse, TMDBMovieDetails } from './tmdb-utils';
 
-const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL || 'https://api.themoviedb.org/3';
+const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL;
 const getFetchOptions = () => ({
     method: 'GET',
     headers: {
@@ -74,7 +74,7 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
         throw new Error('Invalid movie ID.');
     }
 
-    const url = `${TMDB_API_BASE_URL}/movie/${parsedId.data}?language=en-US&append_to_response=credits`;
+    const url = `${TMDB_API_BASE_URL}/movie/${parsedId.data}?language=en-US&append_to_response=credits,keywords`;
 
     try {
         const response = await fetch(url, getFetchOptions());

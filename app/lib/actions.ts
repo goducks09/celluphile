@@ -8,6 +8,7 @@ import dbConnect from './mongoose';
 import Movie from '../models/movie';
 import User from '../models/user';
 import UserMovie from '../models/userMovie';
+import UserEvent from '../models/userEvent';
 import { z } from 'zod';
 import { getMovieDetails } from './tmdb';
 import { extractCredits } from './tmdb-utils';
@@ -32,7 +33,7 @@ import {
 // Types
 // ============================================================
 
-export type SerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | keyof Document> & {
+export type SerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embedding' | keyof Document> & {
     _id: string;
     userId: string;
     quality: Quality;
@@ -98,11 +99,16 @@ function serializeMovie(doc: any): SerializedMovie {
 
         title: movieDetails.title,
         poster: movieDetails.poster || '',
+        overview: movieDetails.overview || '',
         genre: movieDetails.genre || [],
+        keywords: movieDetails.keywords || [],
         actors: movieDetails.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
         directors: movieDetails.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
         releaseDate: movieDetails.releaseDate,
         runtime: movieDetails.runtime,
+        voteAverage: movieDetails.voteAverage,
+        voteCount: movieDetails.voteCount,
+        popularity: movieDetails.popularity,
     };
 }
 
@@ -127,7 +133,7 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
 
     try {
         await dbConnect();
-        
+
         const { tmdbId, quality, customNotes } = parsed.data;
         const userId = new Types.ObjectId(session.user.id);
 
@@ -137,22 +143,29 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         }
 
         let movie = await Movie.findOne({ tmdbId });
-        
+
         if (!movie) {
             const tmdbDetails = await getMovieDetails(tmdbId);
             const { actors, directors } = extractCredits(tmdbDetails);
-            
+            const keywords = tmdbDetails.keywords?.keywords?.map((k: any) => k.name) || [];
+
             movie = await Movie.findOneAndUpdate(
                 { tmdbId },
                 {
                     $setOnInsert: {
                         title: tmdbDetails.title,
                         poster: tmdbDetails.poster_path || '',
+                        overview: tmdbDetails.overview || '',
                         genre: tmdbDetails.genres.map(g => g.name),
+                        keywords,
                         actors,
                         directors,
                         releaseDate: tmdbDetails.release_date,
                         runtime: tmdbDetails.runtime !== null ? tmdbDetails.runtime : undefined,
+                        voteAverage: tmdbDetails.vote_average,
+                        voteCount: tmdbDetails.vote_count,
+                        popularity: tmdbDetails.popularity,
+                        embedding: null,
                         lastFetched: new Date()
                     }
                 },
@@ -168,6 +181,15 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         });
 
         await newUserMovie.save();
+
+        // Phase 4: Log the 'added' event implicitly
+        const newEvent = new UserEvent({
+            userId,
+            tmdbId,
+            event: 'added'
+        });
+        await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
+
         revalidateLibrary();
 
         return { success: true, message: 'Movie added to library successfully!' };
@@ -200,6 +222,14 @@ export async function removeMovieFromLibrary(tmdbId: number) {
         if (!result) {
             return { success: false, message: 'Movie not found in your library.' };
         }
+
+        // Phase 4: Log the 'removed' event
+        const newEvent = new UserEvent({
+            userId: new Types.ObjectId(session.user.id),
+            tmdbId: parsed.data,
+            event: 'removed'
+        });
+        await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
 
         revalidateLibrary(parsed.data);
         return { success: true, message: 'Movie removed from library.' };
@@ -236,36 +266,40 @@ export async function searchUserLibrary(
         await dbConnect();
 
         const pipeline: any[] = [];
-        
+
         if (safeQuery && safeQuery.trim() !== '') {
             // Start with Movie collection for $text index support
             pipeline.push({ $match: { $text: { $search: safeQuery } } });
-            
+
             if (safeFilters?.genre && safeFilters.genre.length > 0) {
                 pipeline.push({ $match: { genre: { $in: safeFilters.genre } } });
             }
-            
+
             pipeline.push({
                 $lookup: {
                     from: 'usermovies',
                     let: { movieTmdbId: '$tmdbId' },
                     pipeline: [
-                         { $match: {
-                             $expr: { $and: [
-                                 { $eq: ['$tmdbId', '$$movieTmdbId'] },
-                                 { $eq: ['$userId', new Types.ObjectId(session.user.id)] }
-                             ]}
-                         }}
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$tmdbId', '$$movieTmdbId'] },
+                                        { $eq: ['$userId', new Types.ObjectId(session.user.id)] }
+                                    ]
+                                }
+                            }
+                        }
                     ],
                     as: 'userMovie'
                 }
             });
             pipeline.push({ $unwind: '$userMovie' });
-            
+
             if (safeFilters?.quality && safeFilters.quality.length > 0) {
                 pipeline.push({ $match: { 'userMovie.quality': { $in: safeFilters.quality } } });
             }
-            
+
             pipeline.push({ $addFields: { score: { $meta: 'textScore' } } });
             pipeline.push({ $sort: { score: -1 } });
             pipeline.push({ $project: { score: 0 } });
@@ -276,7 +310,7 @@ export async function searchUserLibrary(
                 userMatch.quality = { $in: safeFilters.quality };
             }
             pipeline.push({ $match: userMatch });
-            
+
             pipeline.push({
                 $lookup: {
                     from: 'movies',
@@ -286,11 +320,11 @@ export async function searchUserLibrary(
                 }
             });
             pipeline.push({ $unwind: '$movieDetails' });
-            
+
             if (safeFilters?.genre && safeFilters.genre.length > 0) {
                 pipeline.push({ $match: { 'movieDetails.genre': { $in: safeFilters.genre } } });
             }
-            
+
             let sortConfig: any = {};
             if (safeSortOpts) {
                 if (safeSortOpts.field === 'title' || safeSortOpts.field === 'release_date') {
@@ -308,8 +342,8 @@ export async function searchUserLibrary(
         pipeline.push({ $skip: skip });
         pipeline.push({ $limit: limit + 1 });
 
-        const rawResult = safeQuery && safeQuery.trim() !== '' 
-            ? await Movie.aggregate(pipeline) 
+        const rawResult = safeQuery && safeQuery.trim() !== ''
+            ? await Movie.aggregate(pipeline)
             : await UserMovie.aggregate(pipeline);
 
         const hasMore = rawResult.length > limit;
@@ -550,5 +584,136 @@ export async function unsubscribeUser() {
     } catch (err) {
         console.error('Failed to unsubscribe from push notifications:', err);
         return { success: false, message: 'Database error' };
+    }
+}
+
+// ============================================================
+// Event Logging (Phase 4 AI Recommendation)
+// ============================================================
+
+export async function logUserEvent(
+    tmdbId: number,
+    event: 'added' | 'removed' | 'rated' | 'watched' | 'watchlisted',
+    rating?: number | null,
+    sessionId?: string
+) {
+    const { session, error } = await getValidatedSession('log an event');
+    if (error) return error;
+
+    try {
+        await dbConnect();
+
+        const newEvent = new UserEvent({
+            userId: new Types.ObjectId(session.user.id),
+            tmdbId,
+            event,
+            rating,
+            sessionId,
+        });
+
+        await newEvent.save();
+        return { success: true };
+    } catch (err) {
+        console.error('Error logging user event:', err);
+        return { success: false, message: 'Failed to log event.' };
+    }
+}
+
+// ============================================================
+// Recommendations (Phase 1 AI Recommendation)
+// ============================================================
+
+export async function getRecommendations(): Promise<{ success: boolean; message?: string; movies?: SerializedMovie[] }> {
+    const { session, error } = await getValidatedSession('get recommendations');
+    if (error) return error;
+
+    try {
+        await dbConnect();
+        const userId = new Types.ObjectId(session.user.id);
+
+        // 1. Sample 3 recent movies from the user's library
+        const samples = await UserMovie.aggregate([
+            { $match: { userId } },
+            { $sort: { addedAt: -1 } },
+            { $limit: 3 }
+        ]);
+
+        if (samples.length === 0) {
+            return { success: false, message: 'Not enough movies in library for recommendations.' };
+        }
+
+        const libraryTmdbIds = await UserMovie.find({ userId }).distinct('tmdbId');
+
+        // 2. Vector search for each sampled movie
+        const allRecommendations: any[][] = [];
+
+        for (const userMovie of samples) {
+            const movieDetails = await Movie.findOne({ tmdbId: userMovie.tmdbId });
+            // If the movie has an embedding generated by the offline script, use it
+            if (!movieDetails || !movieDetails.embedding || movieDetails.embedding.length === 0) continue;
+
+            // Note: This requires an Atlas Vector Search index named 'vector_index' configured on the 'embedding' field
+            const similar = await Movie.aggregate([
+                {
+                    $vectorSearch: {
+                        index: 'vector_index',
+                        path: 'embedding',
+                        queryVector: movieDetails.embedding,
+                        numCandidates: 100,
+                        limit: 5
+                    }
+                },
+                {
+                    $match: {
+                        tmdbId: { $nin: libraryTmdbIds }
+                    }
+                }
+            ]);
+
+            allRecommendations.push(similar);
+        }
+
+        // 3. Interleave the results
+        const finalResults: any[] = [];
+        const maxLength = Math.max(...allRecommendations.map(arr => arr.length), 0);
+
+        for (let i = 0; i < maxLength; i++) {
+            for (let j = 0; j < allRecommendations.length; j++) {
+                if (allRecommendations[j] && allRecommendations[j][i]) {
+                    const candidate = allRecommendations[j][i];
+                    // Ensure uniqueness
+                    if (!finalResults.some(m => m.tmdbId === candidate.tmdbId)) {
+                        finalResults.push(candidate);
+                    }
+                }
+            }
+        }
+
+        // Return matching SerializedMovie format (pseudo-serializing for recommendations)
+        const serialized = finalResults.map(m => ({
+            _id: m._id.toString(),
+            userId: session.user.id,
+            tmdbId: m.tmdbId,
+            quality: 'DVD' as Quality, // placeholder
+            addedAt: new Date(),
+            customNotes: '',
+            title: m.title,
+            poster: m.poster || '',
+            overview: m.overview || '',
+            genre: m.genre || [],
+            keywords: m.keywords || [],
+            actors: m.actors || [],
+            directors: m.directors || [],
+            releaseDate: m.releaseDate,
+            runtime: m.runtime,
+            voteAverage: m.voteAverage,
+            voteCount: m.voteCount,
+            popularity: m.popularity,
+        }));
+
+        return { success: true, movies: serialized };
+    } catch (err) {
+        console.error('Error generating recommendations:', err);
+        return { success: false, message: 'Failed to generate recommendations.' };
     }
 }
