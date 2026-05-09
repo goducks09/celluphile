@@ -57,3 +57,4 @@ scripts/__pycache__/
 /scripts/.venv/
 scripts/.venv/**
 /scripts/.venv/**
+scripts/embeddings/

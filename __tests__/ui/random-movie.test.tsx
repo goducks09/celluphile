@@ -26,7 +26,7 @@ jest.mock('sonner', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: (props: any) => {
+    default: ({ fill, ...props }: any) => {
         // eslint-disable-next-line @next/next/no-img-element
         return <img {...props} alt={props.alt} />
     },
@@ -45,7 +45,9 @@ const mockMovie = {
     genres: [],
     releaseDate: '2020-01-01',
     runtime: 120,
-};
+    keywords: [],
+    overview: 'Test overview 1',
+} as any;
 
 const mockMovie2 = {
     _id: '2',
@@ -60,7 +62,9 @@ const mockMovie2 = {
     genres: [],
     releaseDate: '2021-01-01',
     runtime: 90,
-};
+    keywords: [],
+    overview: 'Test overview 2',
+} as any;
 
 describe('RandomMovieClient', () => {
     beforeEach(() => {

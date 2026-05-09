@@ -21,11 +21,15 @@ jest.mock('mongoose', () => {
         toString() { return this.id; }
         static isValid(id: string) { return /^[0-9a-fA-F]{24}$/.test(id); }
     }
+    class MockSchema {
+        index = jest.fn();
+    }
+    (MockSchema as any).Types = { ObjectId: MockObjectId };
     return {
         __esModule: true,
         default: { connect: jest.fn() },
         Types: { ObjectId: MockObjectId },
-        Schema: jest.fn(),
+        Schema: MockSchema,
         model: jest.fn(),
         models: {},
     };
