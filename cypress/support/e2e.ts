@@ -6,6 +6,18 @@
 // DB reset is handled per-spec in each spec file's before() hook
 // to provide spec-level isolation.
 
+Cypress.on('uncaught:exception', (err, runnable) => {
+  // Ignore Next.js Turbopack dev server performance measurement errors
+  const msg = typeof err === 'string' ? err : err.message;
+  if (
+    msg && (msg.includes('negative time stamp') || msg.includes('Failed to execute \'measure\''))
+  ) {
+    return false;
+  }
+  // Let other errors fail the test
+  return true;
+});
+
 // Safety-net intercept: catch any requests that bypass the mock TMDB route
 // (e.g. if TMDB_API_BASE_URL is accidentally unset)
 beforeEach(() => {
@@ -63,4 +75,4 @@ declare global {
   }
 }
 
-export {};
+export { };
