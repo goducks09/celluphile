@@ -31,7 +31,7 @@ describe('E2E-4: Server Action Security', () => {
         tmdbId: 550,
         title: 'Fight Club',
         poster: '/poster.jpg',
-        genre: ['Drama'],
+        genres: ['Drama'],
         quality: 'Blu-ray',
       }]),
       failOnStatusCode: false,

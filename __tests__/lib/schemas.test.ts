@@ -111,9 +111,9 @@ describe('searchFiltersSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('valid genre and quality arrays pass', () => {
+  it('valid genres and quality arrays pass', () => {
     const result = searchFiltersSchema.safeParse({
-      genre: ['Action', 'Drama'],
+      genres: ['Action', 'Drama'],
       quality: ['Blu-ray', '4K'],
     });
     expect(result.success).toBe(true);

@@ -46,18 +46,18 @@ export default function SearchAddMovie() {
         try {
             details = await getMovieDetails(movie.id);
         } catch (error) {
-             console.error('Failed to get enhanced movie details:', error);
-             toast.error(`Failed to fetch details for ${movie.title}.`, { id: loadingToastId });
-             return;
+            console.error('Failed to get enhanced movie details:', error);
+            toast.error(`Failed to fetch details for ${movie.title}.`, { id: loadingToastId });
+            return;
         }
-        
+
         const { actors, directors } = extractCredits(details);
 
         const payload = {
             tmdbId: movie.id,
             title: movie.title,
             poster: movie.poster_path || '',
-            genre: details.genres.map(g => g.name),
+            genres: details.genres.map(g => g.name),
             quality: quality as Quality,
             actors,
             directors,

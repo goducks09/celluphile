@@ -85,9 +85,9 @@ export default async function RecommendationsPage() {
                                     {movie.releaseDate && movie.runtime ? ' • ' : ''}
                                     {movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
                                 </p>
-                                {movie.genre && movie.genre.length > 0 && (
+                                {movie.genres && movie.genres.length > 0 && (
                                     <p className="text-xs mb-2 font-medium text-indigo-400">
-                                        {movie.genre.join(', ')}
+                                        {movie.genres.join(', ')}
                                     </p>
                                 )}
                                 {movie.overview && (

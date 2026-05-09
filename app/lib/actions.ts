@@ -100,7 +100,7 @@ function serializeMovie(doc: any): SerializedMovie {
         title: movieDetails.title,
         poster: movieDetails.poster || '',
         overview: movieDetails.overview || '',
-        genre: movieDetails.genre || [],
+        genres: movieDetails.genres || [],
         keywords: movieDetails.keywords || [],
         actors: movieDetails.actors?.map((a: IActor) => ({ firstName: a.firstName, lastName: a.lastName, fullName: a.fullName })) || [],
         directors: movieDetails.directors?.map((d: IDirector) => ({ firstName: d.firstName, lastName: d.lastName, fullName: d.fullName })) || [],
@@ -156,7 +156,7 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
                         title: tmdbDetails.title,
                         poster: tmdbDetails.poster_path || '',
                         overview: tmdbDetails.overview || '',
-                        genre: tmdbDetails.genres.map(g => g.name),
+                        genres: tmdbDetails.genres.map(g => g.name),
                         keywords,
                         actors,
                         directors,
@@ -271,8 +271,8 @@ export async function searchUserLibrary(
             // Start with Movie collection for $text index support
             pipeline.push({ $match: { $text: { $search: safeQuery } } });
 
-            if (safeFilters?.genre && safeFilters.genre.length > 0) {
-                pipeline.push({ $match: { genre: { $in: safeFilters.genre } } });
+            if (safeFilters?.genres && safeFilters.genres.length > 0) {
+                pipeline.push({ $match: { genres: { $in: safeFilters.genres } } });
             }
 
             pipeline.push({
@@ -321,8 +321,8 @@ export async function searchUserLibrary(
             });
             pipeline.push({ $unwind: '$movieDetails' });
 
-            if (safeFilters?.genre && safeFilters.genre.length > 0) {
-                pipeline.push({ $match: { 'movieDetails.genre': { $in: safeFilters.genre } } });
+            if (safeFilters?.genres && safeFilters.genres.length > 0) {
+                pipeline.push({ $match: { 'movieDetails.genres': { $in: safeFilters.genres } } });
             }
 
             let sortConfig: any = {};
@@ -700,7 +700,7 @@ export async function getRecommendations(): Promise<{ success: boolean; message?
             title: m.title,
             poster: m.poster || '',
             overview: m.overview || '',
-            genre: m.genre || [],
+            genres: m.genres || [],
             keywords: m.keywords || [],
             actors: m.actors || [],
             directors: m.directors || [],

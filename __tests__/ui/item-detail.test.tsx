@@ -8,13 +8,13 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 jest.mock('@/app/lib/actions', () => ({
-  __esModule: true,
-  updateMovieInLibrary: jest.fn(),
-  removeMovieFromLibrary: jest.fn(),
+    __esModule: true,
+    updateMovieInLibrary: jest.fn(),
+    removeMovieFromLibrary: jest.fn(),
 }));
 
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+    useRouter: jest.fn(),
 }));
 
 // Mock Dexie locally
@@ -25,42 +25,42 @@ const mockWhere = jest.fn().mockReturnValue({ equals: mockEquals });
 const mockDbSyncQueueAdd = jest.fn();
 
 jest.mock('@/app/lib/db-client', () => ({
-  db: {
-    movies: {
-      where: (...args: any[]) => mockWhere(...args),
+    db: {
+        movies: {
+            where: (...args: any[]) => mockWhere(...args),
+        },
+        syncQueue: {
+            add: (...args: any[]) => mockDbSyncQueueAdd(...args),
+        },
     },
-    syncQueue: {
-      add: (...args: any[]) => mockDbSyncQueueAdd(...args),
-    },
-  },
 }));
 
 jest.mock('sonner', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-    loading: jest.fn().mockReturnValue('toast-id'),
-  },
+    toast: {
+        success: jest.fn(),
+        error: jest.fn(),
+        loading: jest.fn().mockReturnValue('toast-id'),
+    },
 }));
 
 jest.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, fill, sizes, priority, ...rest }: any) => <img src={src} alt={alt} {...rest} />,
+    __esModule: true,
+    default: ({ src, alt, fill, sizes, priority, ...rest }: any) => <img src={src} alt={alt} {...rest} />,
 }));
 
 const mockMovie: SerializedMovie = {
-  _id: '1',
-  userId: 'user1',
-  tmdbId: 100,
-  title: 'Test Movie',
-  poster: '/test.jpg',
-  genre: ['Action'],
-  quality: 'Blu-ray',
-  addedAt: new Date('2024-01-01'),
-  actors: [{ firstName: 'John', lastName: 'Doe', fullName: 'John Doe' }],
-  directors: [{ firstName: 'Jane', lastName: 'Smith', fullName: 'Jane Smith' }],
-  releaseDate: '2024-07-15',
-  runtime: 120,
+    _id: '1',
+    userId: 'user1',
+    tmdbId: 100,
+    title: 'Test Movie',
+    poster: '/test.jpg',
+    genres: ['Action'],
+    quality: 'Blu-ray',
+    addedAt: new Date('2024-01-01'),
+    actors: [{ firstName: 'John', lastName: 'Doe', fullName: 'John Doe' }],
+    directors: [{ firstName: 'Jane', lastName: 'Smith', fullName: 'Jane Smith' }],
+    releaseDate: '2024-07-15',
+    runtime: 120,
 };
 
 describe('ItemDetail Component', () => {
@@ -133,23 +133,23 @@ describe('ItemDetail Component', () => {
     it('handles online update functionality', async () => {
         const user = userEvent.setup();
         (updateMovieInLibrary as jest.Mock).mockResolvedValue({ success: true });
-        
+
         render(<ItemDetail movie={mockMovie} />);
-        
+
         await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
-        
+
         const notesTextarea = screen.getByPlaceholderText('Add custom notes...');
         await user.type(notesTextarea, 'Great movie!');
-        
+
         await user.click(screen.getByRole('button', { name: /Save Changes/i }));
-        
+
         await waitFor(() => {
             expect(updateMovieInLibrary).toHaveBeenCalledWith(100, expect.objectContaining({
                 customNotes: 'Great movie!',
                 quality: 'Blu-ray'
             }));
         });
-        
+
         expect(toast.success).toHaveBeenCalledWith('Changes saved!', { id: 'toast-id' });
         expect(mockModify).toHaveBeenCalled(); // verified cache update
     });
@@ -183,22 +183,22 @@ describe('ItemDetail Component', () => {
     it('handles offline update functionality via Dexie', async () => {
         Object.defineProperty(navigator, 'onLine', { value: false });
         const user = userEvent.setup();
-        
+
         render(<ItemDetail movie={mockMovie} />);
-        
+
         await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
         const notesTextarea = screen.getByPlaceholderText('Add custom notes...');
         await user.type(notesTextarea, 'Offline edit');
-        
+
         await user.click(screen.getByRole('button', { name: /Save Changes/i }));
-        
+
         await waitFor(() => {
             expect(mockWhere).toHaveBeenCalledWith('tmdbId');
             expect(mockEquals).toHaveBeenCalledWith(100);
             expect(mockModify).toHaveBeenCalledWith(expect.objectContaining({ customNotes: 'Offline edit' }));
             expect(mockDbSyncQueueAdd).toHaveBeenCalledWith(expect.objectContaining({ action: 'update' }));
         });
-        
+
         expect(toast.success).toHaveBeenCalledWith('Offline: Changes saved locally.');
         expect(updateMovieInLibrary).not.toHaveBeenCalled();
     });
@@ -235,20 +235,20 @@ describe('ItemDetail Component', () => {
     it('handles online delete functionality', async () => {
         const user = userEvent.setup();
         (removeMovieFromLibrary as jest.Mock).mockResolvedValue({ success: true });
-        
+
         render(<ItemDetail movie={mockMovie} />);
-        
+
         await user.click(screen.getByRole('button', { name: /Remove/i }));
-        
+
         // Confirmation dialog test
         expect(screen.getByText(/Are you sure you want to remove/i)).toBeInTheDocument();
-        
+
         await user.click(screen.getByRole('button', { name: /Confirm Delete/i }));
-        
+
         await waitFor(() => {
             expect(removeMovieFromLibrary).toHaveBeenCalledWith(100);
         });
-        
+
         expect(mockDelete).toHaveBeenCalled();
         expect(toast.success).toHaveBeenCalledWith('Movie removed from library.', { id: 'toast-id' });
         expect(mockPush).toHaveBeenCalledWith('/dashboard/library');
@@ -280,19 +280,19 @@ describe('ItemDetail Component', () => {
     it('handles offline delete functionality via Dexie', async () => {
         Object.defineProperty(navigator, 'onLine', { value: false });
         const user = userEvent.setup();
-        
+
         render(<ItemDetail movie={mockMovie} />);
-        
+
         await user.click(screen.getByRole('button', { name: /Remove/i }));
         await user.click(screen.getByRole('button', { name: /Confirm Delete/i }));
-        
+
         await waitFor(() => {
             expect(mockWhere).toHaveBeenCalledWith('tmdbId');
             expect(mockEquals).toHaveBeenCalledWith(100);
             expect(mockDelete).toHaveBeenCalled();
             expect(mockDbSyncQueueAdd).toHaveBeenCalledWith(expect.objectContaining({ action: 'remove' }));
         });
-        
+
         expect(toast.success).toHaveBeenCalledWith('Offline: Movie deleted locally. Returning to library.');
         expect(mockPush).toHaveBeenCalledWith('/dashboard/library');
         expect(removeMovieFromLibrary).not.toHaveBeenCalled();

@@ -6,7 +6,7 @@ export interface LocalMovie {
     tmdbId: number;
     title: string;
     poster: string;
-    genre: string[];
+    genres: string[];
     quality: Quality;
     customNotes?: string;
     addedAt: Date;

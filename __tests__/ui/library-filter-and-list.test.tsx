@@ -85,7 +85,7 @@ const createMovie = (overrides: Partial<SerializedMovie> = {}): SerializedMovie 
   tmdbId: 550,
   title: 'Fight Club',
   poster: '/poster.jpg',
-  genre: ['Drama'],
+  genres: ['Drama'],
   quality: 'Blu-ray',
   addedAt: new Date('2024-01-01'),
   actors: [],

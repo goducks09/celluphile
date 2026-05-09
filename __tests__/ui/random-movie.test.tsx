@@ -42,7 +42,7 @@ const mockMovie = {
     poster: '/poster1.jpg',
     actors: [],
     directors: [],
-    genre: [],
+    genres: [],
     releaseDate: '2020-01-01',
     runtime: 120,
 };
@@ -57,7 +57,7 @@ const mockMovie2 = {
     poster: '/poster2.jpg',
     actors: [],
     directors: [],
-    genre: [],
+    genres: [],
     releaseDate: '2021-01-01',
     runtime: 90,
 };
@@ -90,16 +90,16 @@ describe('RandomMovieClient', () => {
 
     it('Pick Another button calls getRandomMovie and updates the displayed movie', async () => {
         (getRandomMovie as jest.Mock).mockResolvedValue({ success: true, movie: mockMovie2 });
-        
+
         render(<RandomMovieClient initialMovie={mockMovie} />);
-        
+
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
-        
+
         await waitFor(() => {
             expect(getRandomMovie).toHaveBeenCalledTimes(1);
         });
-        
+
         expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
     });
 
@@ -108,17 +108,17 @@ describe('RandomMovieClient', () => {
         (getRandomMovie as jest.Mock).mockReturnValue(new Promise(resolve => {
             resolvePromise = resolve;
         }));
-        
+
         render(<RandomMovieClient initialMovie={mockMovie} />);
-        
+
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
-        
+
         expect(screen.getByRole('button')).toBeDisabled();
         expect(screen.getByText(/Picking.../i)).toBeInTheDocument();
-        
+
         resolvePromise({ success: true, movie: mockMovie2 });
-        
+
         await waitFor(() => {
             expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
             expect(screen.getByRole('button')).not.toBeDisabled();
@@ -127,32 +127,32 @@ describe('RandomMovieClient', () => {
 
     it('getRandomMovie fails -> shows error toast, keeps existing movie displayed', async () => {
         (getRandomMovie as jest.Mock).mockResolvedValue({ success: false, message: 'Server error' });
-        
+
         render(<RandomMovieClient initialMovie={mockMovie} />);
-        
+
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
-        
+
         await waitFor(() => {
             expect(toast.error).toHaveBeenCalledWith('Server error');
         });
-        
+
         expect(screen.getByText('Initial Random Movie')).toBeInTheDocument();
     });
 
     it('Offline: Pick Another draws from Dexie cache and updates displayed movie', async () => {
         Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
         (db.movies.toArray as jest.Mock).mockResolvedValue([mockMovie2]);
-        
+
         render(<RandomMovieClient initialMovie={mockMovie} />);
-        
+
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
-        
+
         await waitFor(() => {
             expect(db.movies.toArray).toHaveBeenCalledTimes(1);
         });
-        
+
         expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
         expect(getRandomMovie).not.toHaveBeenCalled();
     });
@@ -160,16 +160,16 @@ describe('RandomMovieClient', () => {
     it('Offline with empty Dexie cache -> shows "No movies offline." toast', async () => {
         Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
         (db.movies.toArray as jest.Mock).mockResolvedValue([]);
-        
+
         render(<RandomMovieClient initialMovie={mockMovie} />);
-        
+
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
-        
+
         await waitFor(() => {
             expect(toast.error).toHaveBeenCalledWith('No movies offline.');
         });
-        
+
         expect(screen.getByText('Initial Random Movie')).toBeInTheDocument();
     });
 });

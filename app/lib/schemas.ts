@@ -13,27 +13,27 @@ export type Quality = z.infer<typeof qualityEnum>;
 export const QUALITIES: Quality[] = qualityEnum.options;
 
 export const personSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  fullName: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    fullName: z.string(),
 });
 
 export const addMovieSchema = z.object({
-  tmdbId: z.number().int().positive(),
-  quality: qualityEnum,
-  customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
+    tmdbId: z.number().int().positive(),
+    quality: qualityEnum,
+    customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
 });
 
 // Internal schema — validates TMDB API response before upserting catalog
 export const movieCatalogSchema = z.object({
-  tmdbId: z.number().int().positive(),
-  title: z.string().min(1).max(255),
-  poster: z.string(),
-  genre: z.array(z.string()),
-  actors: z.array(personSchema).default([]),
-  directors: z.array(personSchema).default([]),
-  releaseDate: z.string().optional(),
-  runtime: z.number().int().nonnegative().optional(),
+    tmdbId: z.number().int().positive(),
+    title: z.string().min(1).max(255),
+    poster: z.string(),
+    genres: z.array(z.string()),
+    actors: z.array(personSchema).default([]),
+    directors: z.array(personSchema).default([]),
+    releaseDate: z.string().optional(),
+    runtime: z.number().int().nonnegative().optional(),
 });
 
 export const movieIdSchema = z.number().int().positive();
@@ -47,7 +47,7 @@ export const pushSubscriptionSchema = z.object({
 });
 
 export const searchFiltersSchema = z.object({
-    genre: z.array(z.string()).optional(),
+    genres: z.array(z.string()).optional(),
     quality: z.array(qualityEnum).optional(),
 }).optional();
 
