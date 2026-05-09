@@ -3,6 +3,7 @@ utils.py — shared TMDB fetching, metadata extraction, and embedding logic.
 Imported by fetch_popular.py and fetch_top_rated.py.
 """
 
+import csv
 import os
 import json
 import time
@@ -154,19 +155,19 @@ def extract_movie_data(details: dict) -> dict:
 
     return {
         "tmdbId":         details.get("id"),
-        "title":          details.get("title"),
-        "poster":         poster,
-        "overview":       details.get("overview"),
-        "genres":         genres,
-        "keywords":       keywords,
         "actors":         actors,
         "directors":      directors,
+        "genres":         genres,
+        "keywords":       keywords,
+        "lastFetched":    datetime.now(timezone.utc).isoformat(),
+        "overview":       details.get("overview"),
+        "popularity":     details.get("popularity"),
+        "poster":         poster,
         "releaseDate":    details.get("release_date"),
         "runtime":        details.get("runtime"),
+        "title":          details.get("title"),
         "voteAverage":    details.get("vote_average"),
         "voteCount":      details.get("vote_count"),
-        "popularity":     details.get("popularity"),
-        "lastFetched":    datetime.now(timezone.utc).isoformat(),
         "_embeddingText": embedding_text,
     }
 
@@ -194,6 +195,26 @@ def save_checkpoint(movies: list[dict]) -> None:
 def checkpointed_ids(movies: list[dict]) -> set[int]:
     """Return the set of tmdbIds already present in the checkpoint."""
     return {m["tmdbId"] for m in movies}
+
+
+def unique_movies(output_path: str = "unique_movies.csv") -> None:
+    """Write movies from search.csv that don't exist in movie_metadata.json to a new CSV."""
+
+    with open("embeddings/movie_metadata_checkpoint.json", "r", encoding="utf-8") as f:
+        seen = json.load(f)
+
+    seen_ids = {m["tmdbId"] for m in seen}
+
+    with open("search.csv", "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames  # preserve the original CSV columns
+
+        unique = [movie for movie in reader if int(movie["id"]) not in seen_ids]
+
+    with open(output_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(unique)
 
 # ---------------------------------------------------------------------------
 # Checkpoint helpers — movie ID lists
