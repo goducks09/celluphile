@@ -36,13 +36,18 @@ export default function PushNotificationManager() {
     }
 
     async function subscribeToPush() {
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+            console.error('Push notifications are not configured: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.');
+            alert('Push notifications are not available right now. Please try again later.');
+            return;
+        }
+
         try {
             const registration = await navigator.serviceWorker.ready
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(
-                    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-                ),
+                applicationServerKey: urlBase64ToUint8Array(vapidKey),
             })
             setSubscription(sub)
             const serializedSub = JSON.parse(JSON.stringify(sub))

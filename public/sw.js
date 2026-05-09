@@ -21,7 +21,7 @@ self.addEventListener('install', (event) => {
             return cache.addAll([
                 '/',
                 '/offline',
-                '/manifest.json',
+                '/manifest.webmanifest',
                 '/icon-192x192.png',
                 '/icon-512x512.png',
             ]);
