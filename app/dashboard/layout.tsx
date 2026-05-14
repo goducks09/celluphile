@@ -12,9 +12,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     return (
         <div className="min-h-screen pb-12" style={{ background: 'var(--background)' }}>
-            <Navigation 
-                email={session?.user?.email} 
-                signOutAction={handleSignOut} 
+            <Navigation
+                email={session?.user?.email}
+                signOutAction={handleSignOut}
             />
             <div id="main-content">
                 {children}

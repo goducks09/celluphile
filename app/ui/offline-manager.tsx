@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db-client';
-import { addMovieToLibrary, removeMovieFromLibrary, updateMovieInLibrary } from '../lib/actions';
+import { addMovieToLibrary, removeMovieFromLibrary, updateMovieInLibrary, addMovieToWishlist, removeMovieFromWishlist } from '../lib/actions';
 
 const MAX_RETRY_COUNT = 3;
 
@@ -50,6 +50,10 @@ export default function OfflineManager() {
                             await removeMovieFromLibrary(op.payload.tmdbId);
                         } else if (op.action === 'update') {
                             await updateMovieInLibrary(op.payload.tmdbId, op.payload.updateData);
+                        } else if (op.action === 'wishlist-add') {
+                            await addMovieToWishlist(op.payload.tmdbId);
+                        } else if (op.action === 'wishlist-remove') {
+                            await removeMovieFromWishlist(op.payload.tmdbId);
                         }
                         // Remove from queue on success.
                         await db.syncQueue.delete(op.id!);

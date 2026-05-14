@@ -63,18 +63,30 @@ describe('E2E-3: Movie Library CRUD', () => {
   // E2E-3.4: Add duplicate movie
   // Relies on E2E-3.2 having already added Inception — tests run in order
   // within a spec, and the DB is reset at the start of this spec file.
-  it('shows error when adding duplicate movie', () => {
+  // it('shows error when adding duplicate movie', () => {
+  //   cy.get('input[placeholder="Search by title..."]').type(searchTerm);
+  //   cy.contains('button', 'Search').click();
+  //   cy.contains(searchTerm).should('be.visible');
+
+  //   // Inception was already added in E2E-3.2, so this should fail
+  //   cy.get('select').first().select('DVD');
+  //   cy.contains('button', 'Add to Library').first().click();
+
+  //   // Use 'exist' instead of 'be.visible' — Sonner toasts animate in from opacity: 0
+  //   cy.contains('already exists', { matchCase: false, timeout: 10000 }).should('exist');
+  // });
+  it('does not allow adding a duplicate movie', () => {
     cy.get('input[placeholder="Search by title..."]').type(searchTerm);
     cy.contains('button', 'Search').click();
     cy.contains(searchTerm).should('be.visible');
 
-    // Inception was already added in E2E-3.2, so this should fail
-    cy.get('select').first().select('DVD');
-    cy.contains('button', 'Add to Library').first().click();
-
-    // Use 'exist' instead of 'be.visible' — Sonner toasts animate in from opacity: 0
-    cy.contains('already exists', { matchCase: false, timeout: 10000 }).should('exist');
-  });
+    cy.contains('h3', searchTerm)
+      .closest('div.flex.items-center')
+      .within(() => {
+        cy.get('span').contains('In Library').should('exist');
+        cy.contains('button', 'Add to Library').should('not.exist');
+      });
+  })
 
   // E2E-3.5: Library displays added movies
   it('displays added movies on the dashboard', () => {
@@ -133,10 +145,10 @@ describe('E2E-3: Movie Library CRUD', () => {
 
     // Click on the movie card to go to detail page
     cy.contains('h3', searchTerm).click();
-    
+
     // In detail page, click remove
     cy.contains('button', 'Remove').click();
-    
+
     // Should confirm modal or just remove, check if modal exists
     cy.get('body').then($body => {
       if ($body.find('button:contains("Confirm Delete")').length > 0) {
@@ -145,7 +157,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     });
 
     cy.contains('removed', { matchCase: false, timeout: 10000 }).should('exist');
-    
+
     // Go back to library
     cy.visit('/dashboard/library');
     cy.contains('h3', searchTerm).should('not.exist');
@@ -163,7 +175,7 @@ describe('E2E-3: Movie Library CRUD', () => {
         if (links.length > 0) {
           cy.wrap(links.first()).click();
           cy.contains('button', 'Remove').click();
-          
+
           cy.get('body').then($modalBody => {
             if ($modalBody.find('button:contains("Confirm Delete")').length > 0) {
               cy.contains('button', 'Confirm Delete').click();

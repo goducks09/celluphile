@@ -7,25 +7,39 @@ import { useLinkStatus } from 'next/link';
 import { ArrowLeftIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 function NavLink({ href, children, onNavigate }: { href: string; children: React.ReactNode; onNavigate?: () => void }) {
+    const [active, setActive] = useState(false);
+
     return (
-        <Link href={href} onClick={onNavigate} className="nav-link relative">
-            <LinkStatusWrapper>{children}</LinkStatusWrapper>
+        <Link 
+            href={href} 
+            onClick={onNavigate} 
+            prefetch={active ? null : false}
+            onMouseEnter={() => setActive(true)}
+            onTouchStart={() => setActive(true)}
+            className="nav-link relative flex items-center"
+        >
+            <span className="flex items-center gap-2">{children}</span>
+            <LoadingIndicator />
         </Link>
     );
 }
 
-function LinkStatusWrapper({ children }: { children: React.ReactNode }) {
+function LoadingIndicator() {
     const { pending } = useLinkStatus();
+    
+    // Always render the SVG to prevent DOM mismatch during hydration.
+    // Use CSS opacity and transition delay to debounce the loading state.
     return (
-        <span className={pending ? 'opacity-50 inline-flex items-center gap-2' : 'flex items-center gap-2'}>
-            {children}
-            {pending && (
-                <svg className="animate-spin h-4 w-4 text-accent absolute right-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-            )}
-        </span>
+        <svg 
+            className={`animate-spin h-4 w-4 text-accent absolute right-4 transition-opacity duration-200 ${pending ? 'opacity-100 delay-100' : 'opacity-0'}`} 
+            xmlns="http://www.w3.org/2000/svg" 
+            fill="none" 
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+        >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
     );
 }
 
@@ -63,7 +77,7 @@ export default function Navigation({ email, signOutAction }: { email?: string | 
             </header>
 
             {/* Overlay */}
-            <div 
+            <div
                 className={`nav-overlay ${drawerOpen ? 'nav-overlay--open' : ''}`}
                 onClick={closeDrawer}
                 aria-hidden="true"
@@ -80,6 +94,7 @@ export default function Navigation({ email, signOutAction }: { email?: string | 
                 <nav className="nav-links">
                     <NavLink href="/dashboard" onNavigate={closeDrawer}>Dashboard</NavLink>
                     <NavLink href="/dashboard/library" onNavigate={closeDrawer}>Library</NavLink>
+                    <NavLink href="/dashboard/wishlist" onNavigate={closeDrawer}>Wishlist</NavLink>
                     <NavLink href="/dashboard/random" onNavigate={closeDrawer}>Random Movie</NavLink>
                     <NavLink href="/dashboard/recommendations" onNavigate={closeDrawer}>Recommendations</NavLink>
                 </nav>

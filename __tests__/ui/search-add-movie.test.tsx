@@ -179,7 +179,7 @@ describe('SearchAddMovie', () => {
     });
 
     // Select quality
-    await user.selectOptions(screen.getByDisplayValue('Select Quality'), 'Blu-ray');
+    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
 
     // Add to library
     await user.click(screen.getByRole('button', { name: /add to library/i }));
@@ -212,7 +212,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    const qualitySelect = screen.getByDisplayValue('Select Quality');
+    const qualitySelect = screen.getByDisplayValue('Quality');
     await user.selectOptions(qualitySelect, 'Blu-ray');
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
@@ -223,10 +223,7 @@ describe('SearchAddMovie', () => {
       );
     });
 
-    // Quality dropdown should reset to default
-    await waitFor(() => {
-      expect(qualitySelect).toHaveValue('');
-    });
+    // The select box is unmounted when the movie is in the library
   });
 
   it('failed add shows error toast', async () => {
@@ -246,7 +243,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    await user.selectOptions(screen.getByDisplayValue('Select Quality'), 'Blu-ray');
+    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
     await waitFor(() => {
@@ -272,7 +269,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    await user.selectOptions(screen.getByDisplayValue('Select Quality'), 'Blu-ray');
+    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
     await waitFor(() => {

@@ -16,10 +16,21 @@ export interface LocalMovie {
     runtime?: number;
 }
 
+export interface LocalWishlistMovie {
+    tmdbId: number;
+    title: string;
+    poster: string;
+    genres: string[];
+    addedAt: Date;
+    releaseDate?: string;
+}
+
 type SyncPayload =
     | { action: 'add'; payload: LocalMovie }
     | { action: 'remove'; payload: { tmdbId: number } }
-    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: Quality; customNotes?: string } } };
+    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: Quality; customNotes?: string } } }
+    | { action: 'wishlist-add'; payload: { tmdbId: number } }
+    | { action: 'wishlist-remove'; payload: { tmdbId: number } };
 
 export type SyncOperation = SyncPayload & {
     id?: number;
@@ -29,11 +40,13 @@ export type SyncOperation = SyncPayload & {
 
 const db = new Dexie('CelluphileDB') as Dexie & {
     movies: EntityTable<LocalMovie, 'tmdbId'>;
+    wishlist: EntityTable<LocalWishlistMovie, 'tmdbId'>;
     syncQueue: EntityTable<SyncOperation, 'id'>;
 };
 
 db.version(1).stores({
     movies: 'tmdbId, title, addedAt',
+    wishlist: 'tmdbId, title, addedAt',
     syncQueue: '++id, timestamp, retryCount'
 });
 

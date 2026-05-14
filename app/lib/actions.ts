@@ -9,6 +9,7 @@ import Movie from '../models/movie';
 import User from '../models/user';
 import UserMovie from '../models/userMovie';
 import UserEvent from '../models/userEvent';
+import UserWishlist from '../models/userWishlist';
 import { z } from 'zod';
 import { getMovieDetails } from './tmdb';
 import { extractCredits } from './tmdb-utils';
@@ -33,13 +34,18 @@ import {
 // Types
 // ============================================================
 
-export type SerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embedding' | keyof Document> & {
+export type BaseSerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embedding' | keyof Document> & {
     _id: string;
     userId: string;
-    quality: Quality;
     addedAt: Date;
+};
+
+export type SerializedMovie = BaseSerializedMovie & {
+    quality: Quality;
     customNotes?: string;
 };
+
+export type SerializedWishlistMovie = BaseSerializedMovie;
 
 type SessionSuccess = { session: Session & { user: { id: string } }; error?: never };
 type SessionError = { error: { success: false; message: string }; session?: never };
@@ -85,17 +91,12 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
     return { session: session as Session & { user: { id: string } } };
 }
 
-function serializeMovie(doc: any): SerializedMovie {
-    const userMovie = doc.userMovie || doc;
-    const movieDetails = doc.movieDetails || doc;
-
+function serializeBaseMovie(baseObj: any, movieDetails: any): BaseSerializedMovie {
     return {
-        _id: userMovie._id.toString(),
-        userId: userMovie.userId.toString(),
-        tmdbId: userMovie.tmdbId,
-        quality: userMovie.quality,
-        addedAt: userMovie.addedAt,
-        customNotes: userMovie.customNotes,
+        _id: baseObj._id.toString(),
+        userId: baseObj.userId.toString(),
+        tmdbId: baseObj.tmdbId,
+        addedAt: baseObj.addedAt,
 
         title: movieDetails.title,
         poster: movieDetails.poster || '',
@@ -110,6 +111,24 @@ function serializeMovie(doc: any): SerializedMovie {
         voteCount: movieDetails.voteCount,
         popularity: movieDetails.popularity,
     };
+}
+
+function serializeMovie(doc: any): SerializedMovie {
+    const userMovie = doc.userMovie || doc;
+    const movieDetails = doc.movieDetails || doc;
+
+    return {
+        ...serializeBaseMovie(userMovie, movieDetails),
+        quality: userMovie.quality,
+        customNotes: userMovie.customNotes,
+    };
+}
+
+function serializeWishlistMovie(doc: any): SerializedWishlistMovie {
+    const userWishlist = doc;
+    const movieDetails = doc.movieDetails || doc;
+
+    return serializeBaseMovie(userWishlist, movieDetails);
 }
 
 function revalidateLibrary(tmdbId?: number) {
@@ -140,6 +159,14 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         const existingUserMovie = await UserMovie.findOne({ userId, tmdbId });
         if (existingUserMovie) {
             return { success: false, message: 'Movie already exists in your library.' };
+        }
+
+        let removedWishlistRecord = null;
+        try {
+            removedWishlistRecord = await UserWishlist.findOneAndDelete({ userId, tmdbId });
+        } catch (err) {
+            console.error('Error removing from wishlist during library add:', err);
+            return { success: false, message: 'Failed to process request.' };
         }
 
         let movie = await Movie.findOne({ tmdbId });
@@ -180,7 +207,18 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
             customNotes
         });
 
-        await newUserMovie.save();
+        try {
+            await newUserMovie.save();
+        } catch (saveErr: any) {
+            if (removedWishlistRecord) {
+                await UserWishlist.create({
+                    userId,
+                    tmdbId,
+                    addedAt: removedWishlistRecord.addedAt
+                }).catch(e => console.error('Failed to restore wishlist record:', e));
+            }
+            throw saveErr;
+        }
 
         // Phase 4: Log the 'added' event implicitly
         const newEvent = new UserEvent({
@@ -191,6 +229,7 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
 
         revalidateLibrary();
+        revalidatePath('/dashboard/wishlist');
 
         return { success: true, message: 'Movie added to library successfully!' };
     } catch (error: any) {
@@ -236,6 +275,196 @@ export async function removeMovieFromLibrary(tmdbId: number) {
     } catch (error) {
         console.error('Error removing movie from library:', error);
         return { success: false, message: 'Failed to remove movie from library.' };
+    }
+}
+
+// ============================================================
+// Wishlist actions
+// ============================================================
+
+export async function addMovieToWishlist(tmdbId: number) {
+    const { session, error } = await getValidatedSession('add to wishlist');
+    if (error) return error;
+
+    const parsed = movieIdSchema.safeParse(tmdbId);
+    if (!parsed.success) {
+        return { success: false, message: 'Invalid movie ID.' };
+    }
+
+    try {
+        await dbConnect();
+        const userId = new Types.ObjectId(session.user.id);
+        const validTmdbId = parsed.data;
+
+        // Check if in library
+        const existingLibrary = await UserMovie.findOne({ userId, tmdbId: validTmdbId });
+        if (existingLibrary) {
+            return { success: false, message: 'Already in library.' };
+        }
+
+        // Check if in wishlist
+        const existingWishlist = await UserWishlist.findOne({ userId, tmdbId: validTmdbId });
+        if (existingWishlist) {
+            return { success: false, message: 'Already in wishlist.' };
+        }
+
+        let movie = await Movie.findOne({ tmdbId: validTmdbId });
+
+        if (!movie) {
+            const tmdbDetails = await getMovieDetails(validTmdbId);
+            const { actors, directors } = extractCredits(tmdbDetails);
+            const keywords = tmdbDetails.keywords?.keywords?.map((k: any) => k.name) || [];
+
+            movie = await Movie.findOneAndUpdate(
+                { tmdbId: validTmdbId },
+                {
+                    $setOnInsert: {
+                        title: tmdbDetails.title,
+                        poster: tmdbDetails.poster_path || '',
+                        overview: tmdbDetails.overview || '',
+                        genres: tmdbDetails.genres.map(g => g.name),
+                        keywords,
+                        actors,
+                        directors,
+                        releaseDate: tmdbDetails.release_date,
+                        runtime: tmdbDetails.runtime !== null ? tmdbDetails.runtime : undefined,
+                        voteAverage: tmdbDetails.vote_average,
+                        voteCount: tmdbDetails.vote_count,
+                        popularity: tmdbDetails.popularity,
+                        embedding: null,
+                        lastFetched: new Date()
+                    }
+                },
+                { upsert: true, new: true }
+            );
+        }
+
+        const newWishlistItem = new UserWishlist({
+            userId,
+            tmdbId: validTmdbId
+        });
+        await newWishlistItem.save();
+
+        const newEvent = new UserEvent({
+            userId,
+            tmdbId: validTmdbId,
+            event: 'wishlisted'
+        });
+        await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
+
+        revalidatePath('/dashboard/wishlist');
+
+        return { success: true, message: 'Movie added to wishlist.' };
+    } catch (err) {
+        console.error('Error adding to wishlist:', err);
+        return { success: false, message: 'Failed to add to wishlist.' };
+    }
+}
+
+export async function removeMovieFromWishlist(tmdbId: number) {
+    const { session, error } = await getValidatedSession('remove from wishlist');
+    if (error) return error;
+
+    const parsed = movieIdSchema.safeParse(tmdbId);
+    if (!parsed.success) {
+        return { success: false, message: 'Invalid movie ID.' };
+    }
+
+    try {
+        await dbConnect();
+        const userId = new Types.ObjectId(session.user.id);
+        const validTmdbId = parsed.data;
+
+        const result = await UserWishlist.findOneAndDelete({ userId, tmdbId: validTmdbId });
+        if (!result) {
+            return { success: false, message: 'Movie not found in wishlist.' };
+        }
+
+        const newEvent = new UserEvent({
+            userId,
+            tmdbId: validTmdbId,
+            event: 'unwishlisted'
+        });
+        await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
+
+        revalidatePath('/dashboard/wishlist');
+        return { success: true, message: 'Movie removed from wishlist.' };
+    } catch (err) {
+        console.error('Error removing from wishlist:', err);
+        return { success: false, message: 'Failed to remove from wishlist.' };
+    }
+}
+
+export async function getUserWishlist(
+    pagination?: z.infer<typeof searchPaginationSchema>
+): Promise<{ success: boolean; message?: string; movies: SerializedWishlistMovie[]; hasMore?: boolean; page?: number }> {
+    const { session, error } = await getValidatedSession('view wishlist');
+    if (error) return { ...error, movies: [] };
+
+    const parsedPagination = searchPaginationSchema.safeParse(pagination || { page: 1, limit: 20 });
+    if (!parsedPagination.success) {
+        return { success: false, message: 'Invalid pagination.', movies: [] };
+    }
+
+    const { page, limit } = parsedPagination.data;
+
+    try {
+        await dbConnect();
+        const userId = new Types.ObjectId(session.user.id);
+
+        const pipeline: any[] = [
+            { $match: { userId } },
+            { $sort: { addedAt: -1 } },
+            {
+                $lookup: {
+                    from: 'movies',
+                    localField: 'tmdbId',
+                    foreignField: 'tmdbId',
+                    as: 'movieDetails'
+                }
+            },
+            { $unwind: '$movieDetails' },
+            { $skip: (page - 1) * limit },
+            { $limit: limit + 1 }
+        ];
+
+        const rawResult = await UserWishlist.aggregate(pipeline);
+        const hasMore = rawResult.length > limit;
+        const pageMovies = hasMore ? rawResult.slice(0, limit) : rawResult;
+
+        return {
+            success: true,
+            movies: pageMovies.map(serializeWishlistMovie),
+            hasMore,
+            page
+        };
+    } catch (err) {
+        console.error('Error fetching wishlist:', err);
+        return { success: false, message: 'Failed to fetch wishlist.', movies: [] };
+    }
+}
+
+export async function getUserMovieAndWishlistIds(): Promise<{ success: boolean; libraryIds: number[]; wishlistIds: number[]; message?: string }> {
+    const { session, error } = await getValidatedSession('fetch user library state');
+    if (error) return { ...error, libraryIds: [], wishlistIds: [] };
+
+    try {
+        await dbConnect();
+        const userId = new Types.ObjectId(session.user.id);
+
+        const [libraryIds, wishlistIds] = await Promise.all([
+            UserMovie.distinct('tmdbId', { userId }),
+            UserWishlist.distinct('tmdbId', { userId })
+        ]);
+
+        return {
+            success: true,
+            libraryIds,
+            wishlistIds
+        };
+    } catch (err) {
+        console.error('Error fetching IDs:', err);
+        return { success: false, message: 'Failed to fetch IDs.', libraryIds: [], wishlistIds: [] };
     }
 }
 
@@ -593,7 +822,7 @@ export async function unsubscribeUser() {
 
 export async function logUserEvent(
     tmdbId: number,
-    event: 'added' | 'removed' | 'rated' | 'watched' | 'watchlisted',
+    event: 'added' | 'removed' | 'rated' | 'watched' | 'watchlisted' | 'wishlisted' | 'unwishlisted',
     rating?: number | null,
     sessionId?: string
 ) {

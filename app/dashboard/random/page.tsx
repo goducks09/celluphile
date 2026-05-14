@@ -7,7 +7,7 @@ export default async function RandomPage() {
 
     if (!response.success || !response.movie) {
         return (
-            <div id="main-content" className="stub-page">
+            <div className="stub-page">
                 <div className="stub-card">
                     <span className="stub-icon">🎬</span>
                     <h2 className="stub-title">{response.message || 'Error'}</h2>
@@ -26,7 +26,7 @@ export default async function RandomPage() {
     }
 
     return (
-        <div id="main-content" className="w-full max-w-lg mx-auto py-8 px-4 flex flex-col items-center">
+        <div className="w-full max-w-lg mx-auto py-8 px-4 flex flex-col items-center">
             <h2 className="text-3xl font-bold mb-8 text-center text-indigo-500 flex items-center justify-center gap-3">
                 <span className="text-4xl">🎲</span> Random Movie
             </h2>

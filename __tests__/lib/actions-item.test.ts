@@ -142,6 +142,7 @@ describe('getMovieByTmdbId action', () => {
 
     it('returns error message when database throws', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
         (UserMovie.findOne as jest.Mock).mockImplementation(() => {
             throw new Error('DB connection lost');
@@ -150,5 +151,7 @@ describe('getMovieByTmdbId action', () => {
         const result = await getMovieByTmdbId(550);
         expect(result.success).toBe(false);
         expect(result.message).toBe('Failed to find movie.');
+        
+        consoleSpy.mockRestore();
     });
 });

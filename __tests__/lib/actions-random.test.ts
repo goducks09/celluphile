@@ -125,6 +125,7 @@ describe('getRandomMovie action', () => {
 
     it('returns error message when database throws', async () => {
         (auth as jest.Mock).mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } });
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
         (UserMovie.aggregate as jest.Mock).mockImplementation(() => {
             throw new Error('DB connection lost');
@@ -133,5 +134,7 @@ describe('getRandomMovie action', () => {
         const result = await getRandomMovie();
         expect(result.success).toBe(false);
         expect(result.message).toBe('Failed to get a random movie.');
+        
+        consoleSpy.mockRestore();
     });
 });

@@ -3,7 +3,7 @@ import { Schema, model, models, type HydratedDocument, Types } from 'mongoose';
 export interface IUserEvent {
   userId: Types.ObjectId;
   tmdbId: number;
-  event: 'added' | 'removed' | 'rated' | 'watched' | 'watchlisted';
+  event: 'added' | 'removed' | 'rated' | 'watched' | 'watchlisted' | 'wishlisted' | 'unwishlisted';
   rating?: number | null;
   timestamp: Date;
   sessionId?: string;
@@ -23,7 +23,7 @@ const UserEventSchema = new Schema<IUserEvent>({
   },
   event: {
     type: String,
-    enum: ['added', 'removed', 'rated', 'watched', 'watchlisted'],
+    enum: ['added', 'removed', 'rated', 'watched', 'watchlisted', 'wishlisted', 'unwishlisted'],
     required: true,
   },
   rating: {
