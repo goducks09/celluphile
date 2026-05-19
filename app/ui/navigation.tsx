@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLinkStatus } from 'next/link';
@@ -8,6 +8,11 @@ import { ArrowLeftIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline
 
 function NavLink({ href, children, onNavigate }: { href: string; children: React.ReactNode; onNavigate?: () => void }) {
     const [active, setActive] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
         <Link 
@@ -19,7 +24,7 @@ function NavLink({ href, children, onNavigate }: { href: string; children: React
             className="nav-link relative flex items-center"
         >
             <span className="flex items-center gap-2">{children}</span>
-            <LoadingIndicator />
+            {mounted && <LoadingIndicator />}
         </Link>
     );
 }
@@ -97,6 +102,7 @@ export default function Navigation({ email, signOutAction }: { email?: string | 
                     <NavLink href="/dashboard/wishlist" onNavigate={closeDrawer}>Wishlist</NavLink>
                     <NavLink href="/dashboard/random" onNavigate={closeDrawer}>Random Movie</NavLink>
                     <NavLink href="/dashboard/recommendations" onNavigate={closeDrawer}>Recommendations</NavLink>
+                    <NavLink href="/dashboard/settings" onNavigate={closeDrawer}>Settings</NavLink>
                 </nav>
 
                 <div className="nav-user-section">

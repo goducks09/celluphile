@@ -5,11 +5,9 @@ import PushNotificationManager from '@/app/ui/push-notification-manager';
 // Mock server actions
 const mockSubscribeUser = jest.fn();
 const mockUnsubscribeUser = jest.fn();
-const mockSendNotification = jest.fn();
 jest.mock('@/app/lib/actions', () => ({
   subscribeUser: (...args: any[]) => mockSubscribeUser(...args),
   unsubscribeUser: (...args: any[]) => mockUnsubscribeUser(...args),
-  sendNotification: (...args: any[]) => mockSendNotification(...args),
 }));
 
 // Mock helpers
@@ -20,14 +18,21 @@ jest.mock('@/app/lib/helpers', () => ({
 
 // Helper to set up serviceWorker + PushManager for most tests
 function setupServiceWorkerMock(existingSubscription: any = null) {
-  const mockGetSubscription = jest.fn().mockResolvedValue(existingSubscription);
-  const mockSubscribe = jest.fn().mockResolvedValue({
+  let currentSubscription = existingSubscription;
+
+  const mockNewSubscription = {
     unsubscribe: jest.fn().mockResolvedValue(true),
     endpoint: 'https://push.example.com/new',
     toJSON: () => ({
       endpoint: 'https://push.example.com/new',
       keys: { p256dh: 'new-key', auth: 'new-auth' },
     }),
+  };
+
+  const mockGetSubscription = jest.fn().mockImplementation(() => Promise.resolve(currentSubscription));
+  const mockSubscribe = jest.fn().mockImplementation(() => {
+    currentSubscription = mockNewSubscription;
+    return Promise.resolve(mockNewSubscription);
   });
   const mockRegister = jest.fn().mockResolvedValue({
     pushManager: {
@@ -41,6 +46,7 @@ function setupServiceWorkerMock(existingSubscription: any = null) {
       register: mockRegister,
       ready: Promise.resolve({
         pushManager: {
+          getSubscription: mockGetSubscription,
           subscribe: mockSubscribe,
         },
       }),
@@ -54,11 +60,13 @@ function setupServiceWorkerMock(existingSubscription: any = null) {
     configurable: true,
   });
 
-  return { mockGetSubscription, mockSubscribe, mockRegister };
+  const clearSubscription = () => { currentSubscription = null; };
+
+  return { mockGetSubscription, mockSubscribe, mockRegister, clearSubscription };
 }
 
 describe('PushNotificationManager', () => {
-  it('returns null when serviceWorker is not in navigator', () => {
+  it('shows "not supported" message when serviceWorker is not in navigator', () => {
     // Remove serviceWorker from navigator
     const originalSW = navigator.serviceWorker;
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -67,8 +75,10 @@ describe('PushNotificationManager', () => {
       configurable: true,
     });
 
-    const { container } = render(<PushNotificationManager />);
-    expect(container.innerHTML).toBe('');
+    render(<PushNotificationManager />);
+    expect(
+      screen.getByText(/push notifications are not supported/i)
+    ).toBeInTheDocument();
 
     // Restore
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -91,7 +101,7 @@ describe('PushNotificationManager', () => {
     expect(screen.getByRole('button', { name: /subscribe/i })).toBeInTheDocument();
   });
 
-  it('shows "subscribed" state with unsubscribe + test inputs', async () => {
+  it('shows unsubscribe button when subscribed', async () => {
     const mockSubscription = {
       unsubscribe: jest.fn().mockResolvedValue(true),
       endpoint: 'https://push.example.com',
@@ -108,14 +118,12 @@ describe('PushNotificationManager', () => {
     });
 
     expect(
-      screen.getByText(/you are subscribed to push notifications/i)
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole('button', { name: /unsubscribe/i })
     ).toBeInTheDocument();
+    // Should NOT show the "not subscribed" message or subscribe button
     expect(
-      screen.getByPlaceholderText(/enter notification message/i)
-    ).toBeInTheDocument();
+      screen.queryByText(/not subscribed/i)
+    ).not.toBeInTheDocument();
   });
 
   it('clicking "Subscribe" calls pushManager.subscribe and subscribeUser action', async () => {
@@ -129,8 +137,8 @@ describe('PushNotificationManager', () => {
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
 
-    // After subscribing, the UI should switch to "subscribed" state
-    await screen.findByText(/you are subscribed to push notifications/i);
+    // After subscribing, the UI should switch to show the unsubscribe button
+    await screen.findByRole('button', { name: /unsubscribe/i });
 
     // subscribeUser server action should have been called with serialized subscription
     expect(mockSubscribeUser).toHaveBeenCalledWith(
@@ -143,9 +151,8 @@ describe('PushNotificationManager', () => {
 
   it('clicking "Unsubscribe" calls subscription.unsubscribe and unsubscribeUser action', async () => {
     const user = userEvent.setup();
-    const mockUnsubscribeFn = jest.fn().mockResolvedValue(true);
     const mockSubscription = {
-      unsubscribe: mockUnsubscribeFn,
+      unsubscribe: jest.fn(),
       endpoint: 'https://push.example.com',
       toJSON: () => ({
         endpoint: 'https://push.example.com',
@@ -153,7 +160,13 @@ describe('PushNotificationManager', () => {
       }),
     };
 
-    setupServiceWorkerMock(mockSubscription);
+    const { clearSubscription } = setupServiceWorkerMock(mockSubscription);
+    // Wire the mock's unsubscribe to also clear the tracked subscription
+    // so getSubscription returns null when re-read after the event.
+    mockSubscription.unsubscribe.mockImplementation(() => {
+      clearSubscription();
+      return Promise.resolve(true);
+    });
     mockUnsubscribeUser.mockResolvedValue(undefined);
 
     await act(async () => {
@@ -163,40 +176,11 @@ describe('PushNotificationManager', () => {
     await user.click(screen.getByRole('button', { name: /unsubscribe/i }));
 
     // subscription.unsubscribe() should have been called
-    expect(mockUnsubscribeFn).toHaveBeenCalled();
+    expect(mockSubscription.unsubscribe).toHaveBeenCalled();
     // unsubscribeUser server action should have been called
-    expect(mockUnsubscribeUser).toHaveBeenCalled();
+    expect(mockUnsubscribeUser).toHaveBeenCalledWith('https://push.example.com');
 
     // UI should switch back to "not subscribed"
     await screen.findByText(/not subscribed to push notifications/i);
-  });
-
-  it('clicking "Send Test" calls sendNotification with the message and clears input', async () => {
-    const user = userEvent.setup();
-    const mockSubscription = {
-      unsubscribe: jest.fn().mockResolvedValue(true),
-      endpoint: 'https://push.example.com',
-      toJSON: () => ({
-        endpoint: 'https://push.example.com',
-        keys: { p256dh: 'key', auth: 'auth' },
-      }),
-    };
-
-    setupServiceWorkerMock(mockSubscription);
-    mockSendNotification.mockResolvedValue(undefined);
-
-    await act(async () => {
-      render(<PushNotificationManager />);
-    });
-
-    const messageInput = screen.getByPlaceholderText(/enter notification message/i);
-    await user.type(messageInput, 'Hello push!');
-    await user.click(screen.getByRole('button', { name: /send/i }));
-
-    // sendNotification should have been called with the message text
-    expect(mockSendNotification).toHaveBeenCalledWith('Hello push!');
-
-    // Input should be cleared after sending
-    expect(messageInput).toHaveValue('');
   });
 });

@@ -1,117 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { usePushNotifications } from '../lib/hooks/use-push-notifications';
 
-import { subscribeUser, unsubscribeUser, sendNotification } from '../lib/actions';
-import urlBase64ToUint8Array from '../lib/helpers';
-
-
+/**
+ * Full push-notification manager for the settings page.
+ * Shows subscribe when not subscribed, unsubscribe when subscribed.
+ */
 export default function PushNotificationManager() {
-    const [isSupported, setIsSupported] = useState(false)
-    const [subscription, setSubscription] = useState<PushSubscription | null>(
-        null
-    )
-    const [message, setMessage] = useState('')
-
-    useEffect(() => {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            setIsSupported(true)
-            registerServiceWorker()
-        }
-    }, [])
-
-    async function registerServiceWorker() {
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-                scope: '/',
-                updateViaCache: 'none',
-            })
-            const sub = await registration.pushManager.getSubscription()
-            setSubscription(sub)
-        } catch (error) {
-            // create a notification to let the user know that push notifications are not supported
-            alert('Push notifications registration failed.')
-            console.error('Error registering service worker:', error)
-        }
-    }
-
-    async function subscribeToPush() {
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidKey) {
-            console.error('Push notifications are not configured: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.');
-            alert('Push notifications are not available right now. Please try again later.');
-            return;
-        }
-
-        try {
-            const registration = await navigator.serviceWorker.ready
-            const sub = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidKey),
-            })
-            setSubscription(sub)
-            const serializedSub = JSON.parse(JSON.stringify(sub))
-            await subscribeUser(serializedSub)
-        } catch (error) {
-            // create a notification to let the user know that push notifications are not supported
-            alert('Push notifications subscription failed.')
-            console.error('Error subscribing to push notifications:', error)
-        }
-    }
-
-    async function unsubscribeFromPush() {
-        try {
-            await subscription?.unsubscribe()
-            setSubscription(null)
-            await unsubscribeUser()
-        } catch (error) {
-            // create a notification to let the user know that push notifications are not supported
-            alert('Push notifications unsubscription failed.')
-            console.error('Error unsubscribing from push notifications:', error)
-        }
-    }
-
-    async function sendTestNotification() {
-        if (subscription) {
-            await sendNotification(message)
-            setMessage('')
-        }
-    }
+    const { isSupported, subscription, subscribeToPush, unsubscribeFromPush } = usePushNotifications();
 
     if (!isSupported) {
-        return null
+        return <p className="text-sm text-gray-500 dark:text-gray-400">Push notifications are not supported by this browser.</p>;
     }
 
     return (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 py-3 px-4 text-sm font-medium" style={{ background: 'var(--background-card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-3">
             {subscription ? (
-                <>
-                    <p className="text-center md:text-left">You are subscribed to push notifications.</p>
-                    <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-center">
-                        <button onClick={unsubscribeFromPush} className="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors whitespace-nowrap">
-                            Unsubscribe
-                        </button>
-                        <input
-                            type="text"
-                            placeholder="Enter notification message"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            className="border rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-[200px]"
-                            style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-                        />
-                        <button onClick={sendTestNotification} className="bg-indigo-600 text-white rounded px-4 py-1.5 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm">
-                            Send
-                        </button>
-                    </div>
-                </>
+                <button
+                    onClick={unsubscribeFromPush}
+                    className="text-sm text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors whitespace-nowrap"
+                >
+                    Unsubscribe from push notifications
+                </button>
             ) : (
                 <>
-                    <p className="text-center md:text-left">You are not subscribed to push notifications.</p>
-                    <button onClick={subscribeToPush} className="bg-indigo-600 text-white rounded px-5 py-1.5 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm mt-2 md:mt-0">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        You are not subscribed to push notifications.
+                    </p>
+                    <button
+                        onClick={subscribeToPush}
+                        className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm"
+                    >
                         Subscribe
                     </button>
                 </>
             )}
         </div>
-    )
+    );
 }

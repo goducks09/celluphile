@@ -3,7 +3,6 @@
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import mongoose, { Types, type Document } from 'mongoose';
-import webpush from 'web-push';
 import dbConnect from './mongoose';
 import Movie from '../models/movie';
 import User from '../models/user';
@@ -13,6 +12,7 @@ import UserWishlist from '../models/userWishlist';
 import { z } from 'zod';
 import { getMovieDetails } from './tmdb';
 import { extractCredits } from './tmdb-utils';
+import { NotificationType, NOTIFICATION_REGISTRY } from './notifications/registry';
 
 import type { Session } from 'next-auth';
 import type { IMovie, IActor, IDirector } from '../models/movie';
@@ -23,7 +23,6 @@ import {
     movieIdSchema,
     pushSubscriptionSchema,
     searchFiltersSchema,
-    sendNotificationSchema,
     searchQuerySchema,
     searchSortSchema,
     searchPaginationSchema,
@@ -49,29 +48,6 @@ export type SerializedWishlistMovie = BaseSerializedMovie;
 
 type SessionSuccess = { session: Session & { user: { id: string } }; error?: never };
 type SessionError = { error: { success: false; message: string }; session?: never };
-
-// ============================================================
-// Web Push — initialised once at module load, server-side only.
-// ============================================================
-
-let webPushInitialized = false;
-
-function initWebPush() {
-    try {
-        const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        const privateKey = process.env.VAPID_PRIVATE_KEY;
-        if (!publicKey || !privateKey) {
-            console.warn('[@/lib/actions] VAPID keys are not configured. Push notifications will be disabled.');
-            return;
-        }
-        webpush.setVapidDetails('mailto:you@yourdomain.com', publicKey, privateKey);
-        webPushInitialized = true;
-    } catch (err) {
-        console.error('[@/lib/actions] Failed to initialize web push:', err);
-    }
-}
-
-initWebPush();
 
 // ============================================================
 // Shared helpers
@@ -747,42 +723,6 @@ export async function getLibraryStats(): Promise<{ success: boolean; message?: s
 // Push notification actions
 // ============================================================
 
-export async function sendNotification(message: string) {
-    if (!webPushInitialized) {
-        return { success: false, message: 'Push notifications are not configured.' };
-    }
-
-    const { session, error } = await getValidatedSession('send a notification');
-    if (error) return error;
-
-    const parsed = sendNotificationSchema.safeParse(message);
-    if (!parsed.success) {
-        return { success: false, message: 'Invalid notification message.' };
-    }
-
-    try {
-        await dbConnect();
-        const user = await User.findById(session.user.id);
-
-        if (!user?.webPushSubscription) {
-            return { success: false, message: 'No subscription available for this user.' };
-        }
-
-        await webpush.sendNotification(
-            user.webPushSubscription,
-            JSON.stringify({
-                title: 'Celluphile Update',
-                body: parsed.data,
-                icon: '/icon-192x192.png',
-            })
-        );
-        return { success: true };
-    } catch (err: any) {
-        console.error('Error sending push notification:', err);
-        return { success: false, message: err.message || 'Failed to send notification' };
-    }
-}
-
 export async function subscribeUser(sub: PushSubscription) {
     const { session, error } = await getValidatedSession('subscribe to notifications');
     if (error) return error;
@@ -794,7 +734,13 @@ export async function subscribeUser(sub: PushSubscription) {
 
     try {
         await dbConnect();
-        await User.findByIdAndUpdate(session.user.id, { webPushSubscription: parsed.data });
+        // Remove any existing sub for this endpoint to prevent duplicates from key rotation
+        await User.findByIdAndUpdate(session.user.id, {
+            $pull: { webPushSubscriptions: { endpoint: parsed.data.endpoint } }
+        });
+        await User.findByIdAndUpdate(session.user.id, {
+            $addToSet: { webPushSubscriptions: parsed.data }
+        });
         return { success: true };
     } catch (err) {
         console.error('Failed to save subscription:', err);
@@ -802,16 +748,66 @@ export async function subscribeUser(sub: PushSubscription) {
     }
 }
 
-export async function unsubscribeUser() {
+export async function unsubscribeUser(endpoint: string) {
     const { session, error } = await getValidatedSession('unsubscribe from notifications');
+    if (error) return error;
+
+    const parsed = z.string().url().safeParse(endpoint);
+    if (!parsed.success) {
+        return { success: false, message: 'Invalid endpoint.' };
+    }
+
+    try {
+        await dbConnect();
+        await User.findByIdAndUpdate(session.user.id, { $pull: { webPushSubscriptions: { endpoint: parsed.data } } });
+        return { success: true };
+    } catch (err) {
+        console.error('Failed to unsubscribe from push notifications:', err);
+        return { success: false, message: 'Database error' };
+    }
+}
+
+export async function updateNotificationPreferences(preferences: Record<NotificationType, boolean>) {
+    const { session, error } = await getValidatedSession('update notification preferences');
     if (error) return error;
 
     try {
         await dbConnect();
-        await User.findByIdAndUpdate(session.user.id, { $unset: { webPushSubscription: '' } });
+        const validKeys = Object.keys(NOTIFICATION_REGISTRY) as NotificationType[];
+        const updateDoc: Record<string, boolean> = {};
+
+        for (const [key, value] of Object.entries(preferences)) {
+            if (!validKeys.includes(key as NotificationType) || typeof value !== 'boolean') {
+                continue; // skip invalid keys
+            }
+            updateDoc[`notificationPreferences.${key}`] = value;
+        }
+
+        if (Object.keys(updateDoc).length === 0) {
+            return { success: false, message: 'No valid preferences provided.' };
+        }
+
+        await User.findByIdAndUpdate(session.user.id, { $set: updateDoc });
         return { success: true };
     } catch (err) {
-        console.error('Failed to unsubscribe from push notifications:', err);
+        console.error('Failed to update preferences:', err);
+        return { success: false, message: 'Database error' };
+    }
+}
+
+export async function getNotificationPreferences(): Promise<{ success: boolean; message?: string; preferences?: Record<NotificationType, boolean> }> {
+    const { session, error } = await getValidatedSession('fetch notification preferences');
+    if (error) return { ...error, preferences: undefined };
+
+    try {
+        await dbConnect();
+        const user = await User.findById(session.user.id).lean();
+        if (!user) {
+            return { success: false, message: 'User not found' };
+        }
+        return { success: true, preferences: user.notificationPreferences as any };
+    } catch (err) {
+        console.error('Failed to fetch preferences:', err);
         return { success: false, message: 'Database error' };
     }
 }

@@ -162,6 +162,7 @@ self.addEventListener('push', (event) => {
             icon: data.icon || '/icon-192x192.png',
             badge: '/icon-192x192.png',
             vibrate: [100, 50, 100],
+            requireInteraction: data.requireInteraction || false,
             // Encode the target URL in data so notificationclick
             // can navigate to the right place per notification type.
             data: {
@@ -185,6 +186,7 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     const targetUrl = event.notification.data?.url || '/dashboard';
+    const targetFullUrl = new URL(targetUrl, self.location.origin).href;
 
     event.waitUntil(
         self.clients
@@ -192,7 +194,7 @@ self.addEventListener('notificationclick', (event) => {
             .then((clientList) => {
                 // If a tab is already open on the target URL, focus it.
                 for (const client of clientList) {
-                    if (client.url === targetUrl && 'focus' in client) {
+                    if (client.url.startsWith(targetFullUrl) && 'focus' in client) {
                         return client.focus();
                     }
                 }

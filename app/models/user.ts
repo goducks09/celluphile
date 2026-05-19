@@ -17,9 +17,16 @@ const UserSchema = new Schema({
   mfaSecret: {
     type: String,
   },
-  webPushSubscription: {
-    type: Object, // Stores the PushSubscription object { endpoint, keys: { p256dh, auth } }
-    default: null
+  webPushSubscriptions: {
+    type: [Object],
+    default: []
+  },
+  notificationPreferences: {
+    recommendations: { type: Boolean, default: true },
+    trending:        { type: Boolean, default: true },
+    milestone:       { type: Boolean, default: true },
+    rewatch:         { type: Boolean, default: true },
+    backgroundTask:  { type: Boolean, default: true }
   }
 });
 

@@ -51,7 +51,12 @@ export const searchFiltersSchema = z.object({
     quality: z.array(qualityEnum).optional(),
 }).optional();
 
-export const sendNotificationSchema = z.string().min(1, 'Notification message cannot be empty');
+export const notificationPayloadSchema = z.object({
+    title: z.string().min(1),
+    body:  z.string().min(1),
+    icon:  z.string().optional(),
+    url:   z.string().optional(),
+});
 
 export const searchQuerySchema = z.string();
 
