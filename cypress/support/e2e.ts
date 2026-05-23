@@ -3,8 +3,8 @@
 // See: https://on.cypress.io/configuration
 // ***********************************************************
 
-// DB reset is handled per-spec in each spec file's before() hook
-// to provide spec-level isolation.
+// DB reset is handled per-spec in each spec file's before() hook for spec-level isolation.
+// A final teardown wipe runs via the `after:run` event in cypress.config.ts.
 
 Cypress.on('uncaught:exception', (err, runnable) => {
   // Ignore Next.js Turbopack dev server performance measurement errors

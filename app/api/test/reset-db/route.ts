@@ -18,7 +18,12 @@ export async function POST(request: Request) {
         const collections = await mongoose.connection.db?.collections();
         if (collections) {
             for (const collection of collections) {
-                await collection.deleteMany({});
+                try {
+                    await collection.drop();
+                } catch (err: any) {
+                    // NamespaceNotFound (26) means the collection was already gone — safe to ignore.
+                    if (err?.code !== 26) throw err;
+                }
             }
         }
         return NextResponse.json({ success: true, message: 'Test database reset successfully.' });
