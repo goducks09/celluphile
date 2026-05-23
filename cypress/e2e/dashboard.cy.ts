@@ -4,11 +4,13 @@ describe('E2E-5: Dashboard Page', () => {
 
   before(() => {
     // Reset DB for spec-level isolation
-    cy.request({
-      method: 'POST',
-      url: '/api/test/reset-db',
-      headers: { 'x-test-secret': 'cypress-test-secret' },
-    });
+    cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
+      cy.request({
+        method: 'POST',
+        url: '/api/test/reset-db',
+        headers: { 'x-test-secret': secret },
+      });
+    })
     cy.env(['testPassword']).then(({ testPassword: pw }) => {
       testPassword = pw;
       cy.registerUser(testEmail, testPassword);
@@ -32,7 +34,7 @@ describe('E2E-5: Dashboard Page', () => {
   it('contains library section', () => {
     // First add a movie so library section has content
     cy.loginUser(testEmail, testPassword);
-    
+
     cy.visit('/dashboard/library');
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();

@@ -4,11 +4,13 @@ describe('Random Movie Page', () => {
 
     before(() => {
         // Run DB setup, register a new user once
-        cy.request({
-            method: 'POST',
-            url: '/api/test/reset-db',
-            headers: { 'x-test-secret': 'cypress-test-secret' },
-        });
+        cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
+            cy.request({
+                method: 'POST',
+                url: '/api/test/reset-db',
+                headers: { 'x-test-secret': secret },
+            });
+        })
         cy.env(['testPassword']).then(({ testPassword: pw }) => {
             testPassword = pw;
             cy.registerUser(testEmail, testPassword);
@@ -29,17 +31,17 @@ describe('Random Movie Page', () => {
         cy.visit('/dashboard/library');
         // Type into search box to find a movie to add
         cy.get('input[placeholder="Search by title..."]').type('The Matrix');
-        
+
         // Wait for results
         cy.contains('button', 'Search').click();
         cy.contains('The Matrix').should('be.visible');
-        
+
         // Select quality
         cy.get('select').first().select('4K');
-        
+
         // Add to library
         cy.contains('button', 'Add to Library').first().click();
-        
+
         // Verify success
         cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
     });
@@ -55,7 +57,7 @@ describe('Random Movie Page', () => {
         cy.visit('/dashboard/random');
         // Click the movie card (it's a Link wrapping the content)
         cy.contains('h3', 'The Matrix').click();
-        
+
         cy.url().should('include', '/dashboard/library/');
         // The tmdbId for The Matrix in TMDB is 603
         cy.url().should('include', '603');
@@ -63,16 +65,16 @@ describe('Random Movie Page', () => {
 
     it('Scenario 19 & 20: "Pick Another" button is visually disabled/loading during the request and displays a movie', () => {
         cy.visit('/dashboard/random');
-        
+
         cy.contains('The Matrix').should('be.visible');
-        
+
         // Intercept action if needed, or just test visual state
         // Click Pick Another
         cy.contains('button', 'Pick Another').click();
-        
+
         // Verifies the loading state
         cy.contains('button', 'Picking...').should('be.disabled');
-        
+
         // Because there's only 1 movie, it should theoretically render The Matrix again.
         cy.contains('The Matrix').should('be.visible');
         cy.contains('button', 'Pick Another').should('not.be.disabled');

@@ -5,11 +5,13 @@ describe('E2E-3: Movie Library CRUD', () => {
 
   before(() => {
     // Reset DB for spec-level isolation
-    cy.request({
-      method: 'POST',
-      url: '/api/test/reset-db',
-      headers: { 'x-test-secret': 'cypress-test-secret' },
-    });
+    cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
+      cy.request({
+        method: 'POST',
+        url: '/api/test/reset-db',
+        headers: { 'x-test-secret': secret },
+      });
+    })
     cy.env(['testPassword']).then(({ testPassword: pw }) => {
       testPassword = pw;
       cy.registerUser(testEmail, testPassword);
