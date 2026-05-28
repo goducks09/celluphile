@@ -2,16 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import User from '@/app/models/user';
 import dbConnect from '@/app/lib/mongoose';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+});
 
 export async function POST(req: NextRequest) {
   await dbConnect();
 
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const parsed = registerSchema.safeParse(body);
 
-    if (!email || !password) {
+    if (!parsed.success) {
       return NextResponse.json({ message: 'Email and password are required.' }, { status: 400 });
     }
+
+    const { email, password } = parsed.data;
 
     const existingUser = await User.findOne({ email });
 

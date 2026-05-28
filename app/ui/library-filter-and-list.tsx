@@ -52,6 +52,9 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                         ...m,
                         _id: '',
                         userId: '',
+                        addedAt: typeof m.addedAt === 'string' ? m.addedAt : (m.addedAt instanceof Date ? m.addedAt.toISOString() : new Date(m.addedAt).toISOString()),
+                        overview: m.overview || '',
+                        keywords: m.keywords || [],
                     } as SerializedMovie)));
                     return;
                 }

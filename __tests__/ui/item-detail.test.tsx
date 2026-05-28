@@ -56,11 +56,13 @@ const mockMovie: SerializedMovie = {
     poster: '/test.jpg',
     genres: ['Action'],
     quality: 'Blu-ray',
-    addedAt: new Date('2024-01-01'),
+    addedAt: '2024-01-01T00:00:00.000Z',
     actors: [{ firstName: 'John', lastName: 'Doe', fullName: 'John Doe' }],
     directors: [{ firstName: 'Jane', lastName: 'Smith', fullName: 'Jane Smith' }],
     releaseDate: '2024-07-15',
     runtime: 120,
+    keywords: [],
+    overview: 'Test Movie Overview',
 };
 
 describe('ItemDetail Component', () => {

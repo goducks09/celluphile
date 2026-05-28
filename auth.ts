@@ -5,6 +5,7 @@ import Credentials from 'next-auth/providers/credentials';
 import User from '@/app/models/user';
 import dbConnect from '@/app/lib/mongoose';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(client),
@@ -13,20 +14,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: 'Credentials',
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          return null;
-        }
+        const emailSchema = z.string().email();
+        const passwordSchema = z.string().min(1);
+
+        const email = emailSchema.safeParse(credentials?.email);
+        const password = passwordSchema.safeParse(credentials?.password);
+        if (!email.success || !password.success) return null;
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: email.data });
 
         if (!user || !user.password) {
           return null;
         }
 
         const isPasswordCorrect = await bcrypt.compare(
-          credentials.password as string,
+          password.data,
           user.password
         );
 

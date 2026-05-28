@@ -14,6 +14,11 @@ export interface LocalMovie {
     directors: { firstName: string; lastName: string; fullName: string }[];
     releaseDate?: string;
     runtime?: number;
+    overview?: string;
+    keywords?: string[];
+    voteAverage?: number;
+    voteCount?: number;
+    popularity?: number;
 }
 
 export interface LocalWishlistMovie {

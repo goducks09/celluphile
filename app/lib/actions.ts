@@ -36,7 +36,7 @@ import {
 export type BaseSerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embedding' | keyof Document> & {
     _id: string;
     userId: string;
-    addedAt: Date;
+    addedAt: string;
 };
 
 export type SerializedMovie = BaseSerializedMovie & {
@@ -72,7 +72,10 @@ function serializeBaseMovie(baseObj: any, movieDetails: any): BaseSerializedMovi
         _id: baseObj._id.toString(),
         userId: baseObj.userId.toString(),
         tmdbId: baseObj.tmdbId,
-        addedAt: baseObj.addedAt,
+        addedAt: (() => {
+            const d = baseObj.addedAt ? new Date(baseObj.addedAt) : new Date();
+            return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+        })(),
 
         title: movieDetails.title,
         poster: movieDetails.poster || '',
@@ -920,7 +923,7 @@ export async function getRecommendations(): Promise<{ success: boolean; message?
             userId: session.user.id,
             tmdbId: m.tmdbId,
             quality: 'DVD' as Quality, // placeholder
-            addedAt: new Date(),
+            addedAt: new Date().toISOString(),
             customNotes: '',
             title: m.title,
             poster: m.poster || '',

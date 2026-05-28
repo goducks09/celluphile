@@ -29,7 +29,10 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
                 setMovie({
                     ...randomDexieMovie,
                     _id: '', // Not strictly needed for UI presentation
-                    userId: ''
+                    userId: '',
+                    addedAt: typeof randomDexieMovie.addedAt === 'string' ? randomDexieMovie.addedAt : (randomDexieMovie.addedAt instanceof Date ? randomDexieMovie.addedAt.toISOString() : new Date(randomDexieMovie.addedAt).toISOString()),
+                    overview: randomDexieMovie.overview || '',
+                    keywords: randomDexieMovie.keywords || [],
                 } as SerializedMovie);
                 setLoading(false);
                 return;
