@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { z } from 'zod';
 import { movieIdSchema, searchQuerySchema } from './schemas';
 import type { TMDBSearchResponse, TMDBMovieDetails } from './tmdb-utils';
+import { headers } from 'next/headers';
+import { checkRateLimit } from '@vercel/firewall';
 
 const TMDB_API_BASE_URL = process.env.TMDB_API_BASE_URL;
 const getFetchOptions = () => ({
@@ -30,6 +32,12 @@ export async function searchMovies(query: string, page: number = 1): Promise<TMD
         throw new Error('Unauthorized request.');
     }
 
+    const reqHeaders = await headers();
+    const { rateLimited } = await checkRateLimit('update-object', { headers: reqHeaders });
+    if (rateLimited) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+    }
+
     const parsedQuery = searchQuerySchema.safeParse(query);
     const parsedPage = z.number().int().positive().safeParse(page);
 
@@ -50,7 +58,8 @@ export async function searchMovies(query: string, page: number = 1): Promise<TMD
         const response = await fetch(url, getFetchOptions());
 
         if (!response.ok) {
-            throw new Error(`TMDB API Error: ${response.status} ${response.statusText}`);
+            console.error(`TMDB API Error: ${response.status} ${response.statusText}`);
+            throw new Error('Failed to search movies. Please try again later.');
         }
 
         return await response.json();
@@ -69,6 +78,12 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
         throw new Error('Unauthorized request.');
     }
 
+    const reqHeaders = await headers();
+    const { rateLimited } = await checkRateLimit('update-object', { headers: reqHeaders });
+    if (rateLimited) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+    }
+
     const parsedId = movieIdSchema.safeParse(id);
     if (!parsedId.success) {
         throw new Error('Invalid movie ID.');
@@ -80,7 +95,8 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
         const response = await fetch(url, getFetchOptions());
 
         if (!response.ok) {
-            throw new Error(`TMDB API Error: ${response.status} ${response.statusText}`);
+            console.error(`TMDB API Error: ${response.status} ${response.statusText}`);
+            throw new Error('Failed to fetch movie data.');
         }
 
         return await response.json();

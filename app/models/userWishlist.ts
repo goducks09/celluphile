@@ -1,3 +1,4 @@
+import 'server-only';
 import { Schema, model, models, Types, type HydratedDocument } from 'mongoose';
 
 export interface IUserWishlist {

@@ -56,6 +56,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, processed: users.length });
     } catch (err: any) {
         console.error('Cron job error:', err);
-        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'Internal server error.' }, { status: 500 });
     }
 }

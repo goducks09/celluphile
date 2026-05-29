@@ -1,3 +1,4 @@
+import 'server-only';
 import { Schema, model, models, type HydratedDocument } from 'mongoose';
 
 export interface IActor {

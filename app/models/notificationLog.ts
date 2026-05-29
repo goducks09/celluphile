@@ -1,3 +1,4 @@
+import 'server-only';
 import { Schema, model, models } from 'mongoose';
 
 const NotificationLogSchema = new Schema({

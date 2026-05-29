@@ -4,13 +4,7 @@ describe('Random Movie Page', () => {
 
     before(() => {
         // Run DB setup, register a new user once
-        cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
-            cy.request({
-                method: 'POST',
-                url: '/api/test/reset-db',
-                headers: { 'x-test-secret': secret },
-            });
-        })
+        cy.task('resetTestDb');
         cy.env(['testPassword']).then(({ testPassword: pw }) => {
             testPassword = pw;
             cy.registerUser(testEmail, testPassword);

@@ -6,6 +6,12 @@ jest.mock('@/auth', () => ({
   auth: jest.fn().mockResolvedValue({ user: { id: 'test-user-id' } }),
 }));
 
+jest.mock('next/headers', () => ({
+  headers: jest.fn().mockResolvedValue({
+    get: () => '127.0.0.1',
+  }),
+}));
+
 // Save original fetch
 const originalFetch = global.fetch;
 let consoleSpy: jest.SpyInstance;

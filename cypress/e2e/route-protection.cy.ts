@@ -4,13 +4,7 @@ describe('E2E-2: Route Protection & Authorization', () => {
 
   before(() => {
     // Reset DB for spec-level isolation
-    cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
-      cy.request({
-        method: 'POST',
-        url: '/api/test/reset-db',
-        headers: { 'x-test-secret': secret },
-      });
-    });
+    cy.task('resetTestDb');
     // Register a test user for authenticated tests
     cy.env(['testPassword']).then(({ testPassword: pw }) => {
       testPassword = pw;

@@ -39,7 +39,7 @@ export const movieCatalogSchema = z.object({
 export const movieIdSchema = z.number().int().positive();
 
 export const pushSubscriptionSchema = z.object({
-    endpoint: z.url(),
+    endpoint: z.string().url(),
     keys: z.object({
         p256dh: z.string().min(1),
         auth: z.string().min(1),
@@ -58,7 +58,7 @@ export const notificationPayloadSchema = z.object({
     url:   z.string().optional(),
 });
 
-export const searchQuerySchema = z.string();
+export const searchQuerySchema = z.string().max(200);
 
 export const searchSortSchema = z.object({
     field: z.enum(['title', 'addedAt', 'release_date']),
@@ -77,3 +77,15 @@ export const updateMovieSchema = z.object({
     (data) => Object.keys(data).length > 0,
     { message: 'At least one field must be provided to update.' }
 );
+
+export const logEventSchema = z.object({
+    tmdbId: movieIdSchema,
+    event: z.enum(['added', 'removed', 'rated', 'watched', 'watchlisted', 'wishlisted', 'unwishlisted']),
+    rating: z.number().int().min(1).max(10).nullable().optional(),
+    sessionId: z.string().max(128).optional(),
+});
+
+export const notificationMetadataSchema = z.object({
+    tmdbId: z.number().int().positive().optional(),
+}).passthrough();
+

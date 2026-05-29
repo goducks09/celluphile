@@ -1,4 +1,13 @@
+import 'server-only';
 import { Schema, model, models } from 'mongoose';
+
+const PushSubscriptionSchema = new Schema({
+  endpoint: { type: String, required: true },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true },
+  }
+}, { _id: false });
 
 const UserSchema = new Schema({
   email: {
@@ -18,7 +27,7 @@ const UserSchema = new Schema({
     type: String,
   },
   webPushSubscriptions: {
-    type: [Object],
+    type: [PushSubscriptionSchema],
     default: []
   },
   notificationPreferences: {

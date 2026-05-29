@@ -4,13 +4,7 @@ describe('E2E-5: Dashboard Page', () => {
 
   before(() => {
     // Reset DB for spec-level isolation
-    cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
-      cy.request({
-        method: 'POST',
-        url: '/api/test/reset-db',
-        headers: { 'x-test-secret': secret },
-      });
-    })
+    cy.task('resetTestDb');
     cy.env(['testPassword']).then(({ testPassword: pw }) => {
       testPassword = pw;
       cy.registerUser(testEmail, testPassword);

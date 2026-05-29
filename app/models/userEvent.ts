@@ -1,3 +1,4 @@
+import 'server-only';
 import { Schema, model, models, type HydratedDocument, Types } from 'mongoose';
 
 export interface IUserEvent {

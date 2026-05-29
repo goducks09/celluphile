@@ -71,6 +71,7 @@ declare global {
       registerUser(email: string, password: string): Chainable<Cypress.Response<any>>;
       loginUser(email: string, password: string): Chainable<void>;
       logoutUser(): Chainable<void>;
+      task(event: 'resetTestDb'): Chainable<null>;
     }
   }
 }

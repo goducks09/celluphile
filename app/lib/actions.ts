@@ -27,6 +27,7 @@ import {
     searchSortSchema,
     searchPaginationSchema,
     updateMovieSchema,
+    logEventSchema,
 } from './schemas';
 
 // ============================================================
@@ -828,15 +829,22 @@ export async function logUserEvent(
     const { session, error } = await getValidatedSession('log an event');
     if (error) return error;
 
+    const parsed = logEventSchema.safeParse({ tmdbId, event, rating, sessionId });
+    if (!parsed.success) {
+        return { success: false, message: 'Invalid event data.' };
+    }
+
+    const { tmdbId: validTmdbId, event: validEvent, rating: validRating, sessionId: validSessionId } = parsed.data;
+
     try {
         await dbConnect();
 
         const newEvent = new UserEvent({
             userId: new Types.ObjectId(session.user.id),
-            tmdbId,
-            event,
-            rating,
-            sessionId,
+            tmdbId: validTmdbId,
+            event: validEvent,
+            rating: validRating,
+            sessionId: validSessionId,
         });
 
         await newEvent.save();

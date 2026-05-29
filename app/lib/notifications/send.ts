@@ -1,10 +1,11 @@
+import 'server-only';
 import webpush from 'web-push';
 import dbConnect from '../mongoose';
 import User from '../../models/user';
 import NotificationLog from '../../models/notificationLog';
 import { NotificationType, NOTIFICATION_REGISTRY } from './registry';
 import { z } from 'zod';
-import { pushSubscriptionSchema, notificationPayloadSchema } from '../schemas';
+import { pushSubscriptionSchema, notificationPayloadSchema, notificationMetadataSchema } from '../schemas';
 
 type WebPushSubscription = z.infer<typeof pushSubscriptionSchema>;
 
@@ -15,11 +16,11 @@ function initWebPush() {
     try {
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         const privateKey = process.env.VAPID_PRIVATE_KEY;
-        if (!publicKey || !privateKey) {
-            console.warn('[@/lib/notifications/send] VAPID keys are not configured. Push notifications will be disabled.');
+        const vapidSubject = process.env.VAPID_SUBJECT;
+        if (!publicKey || !privateKey || !vapidSubject) {
+            console.warn('[@/lib/notifications/send] VAPID configuration is incomplete. Push notifications will be disabled.');
             return;
         }
-        const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:hello@celluphile.com';
         webpush.setVapidDetails(vapidSubject, publicKey, privateKey);
         webPushInitialized = true;
     } catch (err) {
@@ -42,6 +43,11 @@ export async function sendSystemNotification(
     const parsedPayload = notificationPayloadSchema.safeParse(payload);
     if (!parsedPayload.success) {
         return { sent: 0, skippedReason: 'Invalid notification payload.' };
+    }
+
+    const parsedMetadata = notificationMetadataSchema.safeParse(metadata);
+    if (!parsedMetadata.success) {
+        return { sent: 0, skippedReason: 'Invalid notification metadata.' };
     }
 
     await dbConnect();
@@ -121,8 +127,8 @@ export async function sendSystemNotification(
         const logEntry = new NotificationLog({
             userId,
             type,
-            tmdbId: metadata.tmdbId,
-            metadata
+            tmdbId: parsedMetadata.data.tmdbId,
+            metadata: parsedMetadata.data
         });
         await logEntry.save().catch((e: any) => console.error('Failed to save notification log:', e));
     }

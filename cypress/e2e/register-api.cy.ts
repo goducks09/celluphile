@@ -5,13 +5,7 @@ describe('E2E-6: Registration API Route Security', () => {
 
   before(() => {
     // Reset DB for spec-level isolation
-    cy.env(['testResetSecret']).then(({ testResetSecret: secret }) => {
-      cy.request({
-        method: 'POST',
-        url: '/api/test/reset-db',
-        headers: { 'x-test-secret': secret },
-      });
-    })
+    cy.task('resetTestDb');
     cy.env(['testPassword']).then(({ testPassword: pw }) => {
       testPassword = pw;
     });

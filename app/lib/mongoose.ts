@@ -1,3 +1,4 @@
+import 'server-only';
 import mongoose, { Mongoose } from 'mongoose';
 
 declare global {
