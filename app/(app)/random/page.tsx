@@ -27,7 +27,7 @@ export default async function RandomPage() {
 
     return (
         <div className="w-full max-w-2xl mx-auto py-4 md:py-6 px-4 flex flex-col items-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center text-indigo-500 flex items-center justify-center gap-3">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center flex items-center justify-center gap-3">
                 <span className="text-3xl md:text-4xl">🎲</span> Random Movie
             </h2>
             <RandomMovieClient initialMovie={response.movie} />

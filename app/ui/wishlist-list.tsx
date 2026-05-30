@@ -107,7 +107,7 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {sortedMovies.map(movie => (
+                {sortedMovies.map((movie, index) => (
                     <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden relative group border" style={{ background: 'var(--background-card)', borderColor: 'var(--border)' }}>
                         <div className="aspect-[2/3] relative w-full" style={{ background: 'var(--background-input)' }}>
                             {movie.poster ? (
@@ -117,6 +117,7 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
                                     fill
                                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
                                     className="object-cover"
+                                    loading={index === 0 ? 'eager' : 'lazy'}
                                 />
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--foreground-muted)' }}>

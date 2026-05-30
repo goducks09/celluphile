@@ -66,7 +66,7 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
                                 fill
                                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                                 className="object-cover"
-                                priority
+                                loading="eager"
                             />
                             <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 rounded text-sm text-white font-medium border border-white/20 backdrop-blur-sm">
                                 {movie.quality}

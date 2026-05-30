@@ -101,7 +101,7 @@ export default function HomeDashboard({
                     </div>
                 ) : (
                     <div className="home-movie-grid">
-                        {filteredMovies.map((movie) => (
+                        {filteredMovies.map((movie, index) => (
                             <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="home-movie-card">
                                 {/* Quality Badge */}
                                 <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality] || 'bg-gray-500'}`}>
@@ -116,6 +116,7 @@ export default function HomeDashboard({
                                         fill
                                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
                                         className="object-cover"
+                                        loading={index === 0 ? 'eager' : 'lazy'}
                                     />
                                 ) : (
                                     <div className="home-movie-placeholder" />

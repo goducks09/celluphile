@@ -60,7 +60,7 @@ export default async function RecommendationsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
-                {movies.map((movie) => (
+                {movies.map((movie, index) => (
                     <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                         {movie.poster ? (
                             <div className="relative w-full h-80 group">
@@ -70,6 +70,7 @@ export default async function RecommendationsPage() {
                                     fill
                                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                                     className="object-cover"
+                                    loading={index === 0 ? 'eager' : 'lazy'}
                                 />
                             </div>
                         ) : (
