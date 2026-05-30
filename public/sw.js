@@ -16,16 +16,30 @@ const TMDB_API_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Install — cache the app shell immediately.
 // ============================================================
 self.addEventListener('install', (event) => {
+    // Use Promise.allSettled so that a redirect (e.g. '/' → '/dashboard'
+    // for authenticated users) or a transient network error on any single
+    // shell asset does not abort the entire install with "Failed to fetch".
+    // '/' is intentionally excluded — auth middleware always redirects
+    // authenticated users away from it (307), so cache.add('/') would
+    // fail on every install. Navigation fallback is handled by the
+    // Network-First strategy in the fetch handler instead.
+    const shellAssets = [
+        '/offline',
+        '/manifest.webmanifest',
+        '/icon-192x192.png',
+        '/icon-512x512.png',
+    ];
+
     event.waitUntil(
-        caches.open(CACHES.shell).then((cache) => {
-            return cache.addAll([
-                '/',
-                '/offline',
-                '/manifest.webmanifest',
-                '/icon-192x192.png',
-                '/icon-512x512.png',
-            ]);
-        })
+        caches.open(CACHES.shell).then((cache) =>
+            Promise.allSettled(
+                shellAssets.map((url) =>
+                    cache.add(url).catch((err) => {
+                        console.warn('[SW] Failed to pre-cache:', url, err);
+                    })
+                )
+            )
+        )
     );
     self.skipWaiting();
 });
