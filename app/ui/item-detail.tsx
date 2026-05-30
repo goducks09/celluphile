@@ -135,7 +135,8 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                             fill
                             sizes="(max-width: 768px) 100vw, 300px"
                             className="object-cover"
-                            priority
+                            loading="eager"
+                            fetchPriority="high"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-[var(--background-input)] text-[var(--foreground-muted)]">
@@ -216,14 +217,14 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
 
                     <div className="mt-4 flex flex-col">
                         <h3 className="item-section-label">Overview</h3>
-                        <p className="text-[var(--foreground)]">{movie.overview}</p>
+                        <p className="text-[var(--foreground-muted)]">{movie.overview}</p>
                     </div>
 
                     <div className="mt-4 flex flex-col gap-4">
                         {movie.directors && movie.directors.length > 0 && (
                             <div>
                                 <h3 className="item-section-label">Director</h3>
-                                <p className="text-[var(--foreground)]">{movie.directors.map((d: any) => d.fullName).join(', ')}</p>
+                                <p className="text-[var(--foreground-muted)]">{movie.directors.map((d: any) => d.fullName).join(', ')}</p>
                             </div>
                         )}
 
