@@ -1,4 +1,4 @@
-import { getUserWishlist } from '@/app/lib/actions';
+import { getUserWishlist } from '@/app/lib/data';
 import WishlistList from '@/app/ui/wishlist-list';
 
 export default async function WishlistPage() {

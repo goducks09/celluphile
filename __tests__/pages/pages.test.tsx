@@ -6,7 +6,7 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-jest.mock('@/app/lib/actions', () => ({
+jest.mock('@/app/lib/data', () => ({
   getRandomMovie: jest.fn(),
 }));
 
@@ -93,7 +93,7 @@ describe('Page Components', () => {
   });
   describe('Random page', () => {
     it('renders empty-state message with link to /dashboard/library if library is empty', async () => {
-      const { getRandomMovie } = require('@/app/lib/actions');
+      const { getRandomMovie } = require('@/app/lib/data');
       getRandomMovie.mockResolvedValue({ success: false, message: 'Your library is empty.' });
       
       const RandomPage = (await import('@/app/dashboard/random/page')).default;
@@ -106,7 +106,7 @@ describe('Page Components', () => {
     });
 
     it('renders RandomMovieClient with returned movie prop', async () => {
-      const { getRandomMovie } = require('@/app/lib/actions');
+      const { getRandomMovie } = require('@/app/lib/data');
       getRandomMovie.mockResolvedValue({ 
         success: true, 
         movie: { title: 'Test Random Movie', tmdbId: 123 } 

@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/app/lib/db-client';
-import { updateMovieInLibrary, removeMovieFromLibrary, type SerializedMovie } from '@/app/lib/actions';
+import { type SerializedMovie } from '@/app/lib/data';
+import { updateMovieInLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
 export default function ItemDetail({ movie: initialMovie }: { movie: SerializedMovie }) {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
     const [movie, setMovie] = useState<SerializedMovie>(initialMovie);
     const [isEditing, setIsEditing] = useState(false);
     const [editQuality, setEditQuality] = useState<Quality>(movie.quality as Quality);
@@ -31,49 +33,51 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
         return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
     };
 
-    const handleSave = async () => {
-        const updateData = { quality: editQuality, customNotes: editNotes };
+    const handleSave = () => {
+        startTransition(async () => {
+            const updateData = { quality: editQuality, customNotes: editNotes };
 
-        // Optimistic UI update
-        const updatedMovie: SerializedMovie = { ...movie, quality: editQuality, customNotes: editNotes };
-        setMovie(updatedMovie);
+            // Optimistic UI update
+            const updatedMovie: SerializedMovie = { ...movie, quality: editQuality, customNotes: editNotes };
+            setMovie(updatedMovie);
 
-        if (!navigator.onLine) {
+            if (!navigator.onLine) {
+                try {
+                    // Update local Dexie DB and queue sync operation for when we are back online
+                    await db.movies.where('tmdbId').equals(movie.tmdbId).modify(updateData);
+                    await db.syncQueue.add({
+                        action: 'update',
+                        payload: { tmdbId: movie.tmdbId, ...updateData },
+                        timestamp: Date.now()
+                    });
+                    toast.success('Offline: Changes saved locally.');
+                } catch (error) {
+                    console.error('Failed to queue update', error);
+                    toast.error('Failed to save changes offline.');
+                }
+                setIsEditing(false);
+                return;
+            }
+
+            // NOTE: toast.loading only fires for the online flow!
+            const loadingToast = toast.loading('Saving changes...');
             try {
-                // Update local Dexie DB and queue sync operation for when we are back online
-                await db.movies.where('tmdbId').equals(movie.tmdbId).modify(updateData);
-                await db.syncQueue.add({
-                    action: 'update',
-                    payload: { tmdbId: movie.tmdbId, ...updateData },
-                    timestamp: Date.now()
-                });
-                toast.success('Offline: Changes saved locally.');
+                const result = await updateMovieInLibrary(movie.tmdbId, updateData);
+                if (result.success) {
+                    toast.success('Changes saved!', { id: loadingToast });
+                    // If it successfully updated on the server, update the local Dexie cache
+                    await db.movies.where('tmdbId').equals(movie.tmdbId).modify(updateData).catch(e => console.error("Cache update failed", e));
+                } else {
+                    toast.error(result.message || 'Failed to save changes.', { id: loadingToast });
+                    setMovie(movie); // Revert optimistic update
+                }
             } catch (error) {
-                console.error('Failed to queue update', error);
-                toast.error('Failed to save changes offline.');
-            }
-            setIsEditing(false);
-            return;
-        }
-
-        // NOTE: toast.loading only fires for the online flow!
-        const loadingToast = toast.loading('Saving changes...');
-        try {
-            const result = await updateMovieInLibrary(movie.tmdbId, updateData);
-            if (result.success) {
-                toast.success('Changes saved!', { id: loadingToast });
-                // If it successfully updated on the server, update the local Dexie cache
-                await db.movies.where('tmdbId').equals(movie.tmdbId).modify(updateData).catch(e => console.error("Cache update failed", e));
-            } else {
-                toast.error(result.message || 'Failed to save changes.', { id: loadingToast });
+                toast.error('An error occurred while saving.', { id: loadingToast });
                 setMovie(movie); // Revert optimistic update
+            } finally {
+                setIsEditing(false);
             }
-        } catch (error) {
-            toast.error('An error occurred while saving.', { id: loadingToast });
-            setMovie(movie); // Revert optimistic update
-        } finally {
-            setIsEditing(false);
-        }
+        });
     };
 
     const handleCancelEdit = () => {
@@ -82,40 +86,42 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
         setIsEditing(false);
     };
 
-    const handleDelete = async () => {
-        if (!navigator.onLine) {
-            try {
-                await db.movies.where('tmdbId').equals(movie.tmdbId).delete();
-                await db.syncQueue.add({
-                    action: 'remove',
-                    payload: { tmdbId: movie.tmdbId },
-                    timestamp: Date.now()
-                });
-                toast.success('Offline: Movie deleted locally. Returning to library.');
-                router.push('/dashboard/library');
-            } catch (err) {
-                console.error('Failed to queue offline delete', err);
-                toast.error('Failed to delete movie offline.');
-                setIsDeleting(false);
+    const handleDelete = () => {
+        startTransition(async () => {
+            if (!navigator.onLine) {
+                try {
+                    await db.movies.where('tmdbId').equals(movie.tmdbId).delete();
+                    await db.syncQueue.add({
+                        action: 'remove',
+                        payload: { tmdbId: movie.tmdbId },
+                        timestamp: Date.now()
+                    });
+                    toast.success('Offline: Movie deleted locally. Returning to library.');
+                    router.push('/dashboard/library');
+                } catch (err) {
+                    console.error('Failed to queue offline delete', err);
+                    toast.error('Failed to delete movie offline.');
+                    setIsDeleting(false);
+                }
+                return;
             }
-            return;
-        }
 
-        const loadingToast = toast.loading('Removing movie...');
-        try {
-            const result = await removeMovieFromLibrary(movie.tmdbId);
-            if (result.success) {
-                toast.success('Movie removed from library.', { id: loadingToast });
-                await db.movies.where('tmdbId').equals(movie.tmdbId).delete().catch(e => console.error("Cache update failed", e));
-                router.push('/dashboard/library');
-            } else {
-                toast.error(result.message || 'Failed to remove movie.', { id: loadingToast });
+            const loadingToast = toast.loading('Removing movie...');
+            try {
+                const result = await removeMovieFromLibrary(movie.tmdbId);
+                if (result.success) {
+                    toast.success('Movie removed from library.', { id: loadingToast });
+                    await db.movies.where('tmdbId').equals(movie.tmdbId).delete().catch(e => console.error("Cache update failed", e));
+                    router.push('/dashboard/library');
+                } else {
+                    toast.error(result.message || 'Failed to remove movie.', { id: loadingToast });
+                    setIsDeleting(false);
+                }
+            } catch (error) {
+                toast.error('An error occurred.', { id: loadingToast });
                 setIsDeleting(false);
             }
-        } catch (error) {
-            toast.error('An error occurred.', { id: loadingToast });
-            setIsDeleting(false);
-        }
+        });
     };
 
     return (
@@ -212,7 +218,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                         {movie.directors && movie.directors.length > 0 && (
                             <div>
                                 <h3 className="item-section-label">Director</h3>
-                                <p className="text-[var(--foreground)]">{movie.directors.map(d => d.fullName).join(', ')}</p>
+                                <p className="text-[var(--foreground)]">{movie.directors.map((d: any) => d.fullName).join(', ')}</p>
                             </div>
                         )}
 
@@ -220,7 +226,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                             <div>
                                 <h3 className="item-section-label">Cast</h3>
                                 <div className="item-cast-list">
-                                    {movie.actors.slice(0, 5).map(a => (
+                                    {movie.actors.slice(0, 5).map((a: any) => (
                                         <span key={`${a.firstName}-${a.lastName}`} className="item-cast-chip">
                                             {a.fullName}
                                         </span>

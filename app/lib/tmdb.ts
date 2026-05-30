@@ -1,4 +1,4 @@
-'use server';
+import 'server-only';
 
 import { auth } from '@/auth';
 import { z } from 'zod';
@@ -16,9 +16,7 @@ const getFetchOptions = () => ({
     },
 });
 
-// All TMDB type definitions live in ./tmdb-utils to keep this server-action
-// file free of synchronous exports (Next.js requires all exports from a
-// 'use server' file to be async functions).
+// All TMDB type definitions live in ./tmdb-utils.
 export type { TMDBMovie, TMDBSearchResponse, TMDBMovieDetails } from './tmdb-utils';
 
 /**

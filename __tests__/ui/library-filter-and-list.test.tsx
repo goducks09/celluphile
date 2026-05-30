@@ -1,13 +1,8 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LibraryFilterAndList from '@/app/ui/library-filter-and-list';
-import type { SerializedMovie } from '@/app/lib/actions';
+import type { SerializedMovie } from '@/app/lib/data';
 
-// Mock actions
-const mockSearchUserLibrary = jest.fn();
-jest.mock('@/app/lib/actions', () => ({
-  searchUserLibrary: (...args: any[]) => mockSearchUserLibrary(...args),
-}));
 
 // Mock Dexie db
 const mockDbMoviesDelete = jest.fn().mockReturnValue({ delete: jest.fn().mockResolvedValue(undefined) });
@@ -97,6 +92,15 @@ describe('LibraryFilterAndList', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        json: async () => ({
+          success: true,
+          movies: [createMovie()],
+          hasMore: false,
+        }),
+      })
+    );
   });
 
   afterEach(() => {
@@ -113,10 +117,11 @@ describe('LibraryFilterAndList', () => {
     expect(screen.getByText('Fight Club')).toBeInTheDocument();
     expect(screen.getByText('Inception')).toBeInTheDocument();
   });
-
   it('shows skeleton loader while filtering', async () => {
-    mockSearchUserLibrary.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ success: true, movies: [], hasMore: false }), 1000))
+    global.fetch = jest.fn().mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve({
+        json: async () => ({ success: true, movies: [], hasMore: false }),
+      }), 1000))
     );
 
     await act(async () => {
@@ -140,12 +145,6 @@ describe('LibraryFilterAndList', () => {
   });
 
   it('filter by quality calls searchUserLibrary with quality filter', async () => {
-    mockSearchUserLibrary.mockResolvedValue({
-      success: true,
-      movies: [createMovie()],
-      hasMore: false,
-    });
-
     await act(async () => {
       render(<LibraryFilterAndList initialMovies={[createMovie()]} />);
     });
@@ -161,22 +160,21 @@ describe('LibraryFilterAndList', () => {
     });
 
     await waitFor(() => {
-      expect(mockSearchUserLibrary).toHaveBeenCalledWith(
-        '',
-        { quality: ['Blu-ray'] },
-        undefined,
-        { page: 1, limit: 20 }
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/library/search',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            query: '',
+            filters: { quality: ['Blu-ray'] },
+            pagination: { page: 1, limit: 20 },
+          }),
+        })
       );
     });
   });
 
   it('search debounces at 300ms', async () => {
-    mockSearchUserLibrary.mockResolvedValue({
-      success: true,
-      movies: [],
-      hasMore: false,
-    });
-
     await act(async () => {
       render(<LibraryFilterAndList initialMovies={[createMovie()]} />);
     });
@@ -200,8 +198,9 @@ describe('LibraryFilterAndList', () => {
       fireEvent.change(searchInput, { target: { value: 'Fig' } });
     });
 
-    // Should not yet have called searchUserLibrary for these intermediate values
-    const callsBeforeDebounce = mockSearchUserLibrary.mock.calls.length;
+    // Should not yet have called search api for these intermediate values
+    const callsBeforeDebounce = (global.fetch as jest.Mock).mock.calls.length;
+    expect(callsBeforeDebounce).toBe(0);
 
     // Now advance past debounce
     await act(async () => {
@@ -210,16 +209,19 @@ describe('LibraryFilterAndList', () => {
 
     await waitFor(() => {
       // Should have been called with the final value
-      expect(mockSearchUserLibrary).toHaveBeenCalledWith(
-        'Fig',
-        expect.any(Object),
-        undefined,
-        expect.any(Object)
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/library/search',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            query: 'Fig',
+            filters: {},
+            pagination: { page: 1, limit: 20 },
+          }),
+        })
       );
     });
   });
-
-
 
   it('empty results shows "No movies found" message', async () => {
     await act(async () => {

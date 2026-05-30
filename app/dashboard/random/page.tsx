@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getRandomMovie } from '@/app/lib/actions';
+import { getRandomMovie } from '@/app/lib/data';
 import RandomMovieClient from '@/app/ui/random-movie';
 
 export default async function RandomPage() {
@@ -26,9 +26,9 @@ export default async function RandomPage() {
     }
 
     return (
-        <div className="w-full max-w-lg mx-auto py-8 px-4 flex flex-col items-center">
-            <h2 className="text-3xl font-bold mb-8 text-center text-indigo-500 flex items-center justify-center gap-3">
-                <span className="text-4xl">🎲</span> Random Movie
+        <div className="w-full max-w-2xl mx-auto py-4 md:py-6 px-4 flex flex-col items-center">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center text-indigo-500 flex items-center justify-center gap-3">
+                <span className="text-3xl md:text-4xl">🎲</span> Random Movie
             </h2>
             <RandomMovieClient initialMovie={response.movie} />
         </div>

@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { getMovieByTmdbId } from '@/app/lib/actions';
+import { getMovieByTmdbId } from '@/app/lib/data';
 import ItemDetail from '@/app/ui/item-detail';
 import type { Metadata } from 'next';
 

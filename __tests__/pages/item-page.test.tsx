@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { getMovieByTmdbId } from '@/app/lib/actions';
+import { getMovieByTmdbId } from '@/app/lib/data';
 import { notFound, redirect } from 'next/navigation';
 
-jest.mock('@/app/lib/actions', () => ({
+jest.mock('@/app/lib/data', () => ({
   getMovieByTmdbId: jest.fn(),
 }));
 

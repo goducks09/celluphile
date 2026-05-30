@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { searchUserLibrary, getLibraryStats } from '@/app/lib/actions';
+import { searchUserLibrary, getLibraryStats } from '@/app/lib/data';
 import HomeDashboard from '@/app/ui/home-dashboard';
 
 export default async function DashboardPage() {

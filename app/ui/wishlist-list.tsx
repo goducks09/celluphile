@@ -3,7 +3,8 @@
 import { useOptimistic, useState, useTransition } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { SerializedWishlistMovie, removeMovieFromWishlist, addMovieToLibrary } from '@/app/lib/actions';
+import type { SerializedWishlistMovie } from '@/app/lib/data';
+import { removeMovieFromWishlist, addMovieToLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
 export default function WishlistList({ initialMovies }: { initialMovies: SerializedWishlistMovie[] }) {

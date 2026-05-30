@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { SerializedMovie } from '@/app/lib/actions';
-import type { LibraryStats } from '@/app/lib/actions';
+import type { SerializedMovie, LibraryStats } from '@/app/lib/data';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { QUALITY_COLORS } from '@/app/ui/constants';
 

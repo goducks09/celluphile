@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { searchUserLibrary, type SerializedMovie } from '@/app/lib/actions';
+import { type SerializedMovie } from '@/app/lib/data';
 import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
@@ -61,7 +61,12 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
 
                 // Online Read: Query Server
                 const filters = selectedQuality ? { quality: [selectedQuality] } : {};
-                const result = await searchUserLibrary(query, filters, undefined, { page: 1, limit: 20 });
+                const res = await fetch('/api/library/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, filters, pagination: { page: 1, limit: 20 } })
+                });
+                const result = await res.json();
 
                 if (result.success) {
                     setMovies(result.movies);
@@ -69,7 +74,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     // Overwrite Dexie cache with fresh server state when fetching the unfiltered root library
                     const pendingOps = await db.syncQueue.count();
                     if (pendingOps === 0 && !query && !selectedQuality) {
-                        const moviesToCache = result.movies.map((m) => ({
+                        const moviesToCache = result.movies.map((m: SerializedMovie) => ({
                             ...m,
                             addedAt: new Date(m.addedAt)
                         }));
@@ -106,7 +111,12 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             }
             const nextPage = page + 1;
             const filters = selectedQuality ? { quality: [selectedQuality] } : {};
-            const result = await searchUserLibrary(query, filters, undefined, { page: nextPage, limit: 20 });
+            const res = await fetch('/api/library/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, filters, pagination: { page: nextPage, limit: 20 } })
+            });
+            const result = await res.json();
 
             if (result.success) {
                 setMovies(prev => [...prev, ...result.movies]);

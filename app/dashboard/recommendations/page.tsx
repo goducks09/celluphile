@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getRecommendations } from '@/app/lib/actions';
+import { getRecommendations } from '@/app/lib/data';
 import { auth } from '@/auth';
 
 export default async function RecommendationsPage() {

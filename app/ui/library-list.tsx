@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import LibraryFilterAndList from './library-filter-and-list';
-import { searchUserLibrary } from '@/app/lib/actions';
+import { searchUserLibrary } from '@/app/lib/data';
 import { FilmIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 

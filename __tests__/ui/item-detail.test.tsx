@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ItemDetail from '@/app/ui/item-detail';
-import type { SerializedMovie } from '@/app/lib/actions';
+import type { SerializedMovie } from '@/app/lib/data';
 import { updateMovieInLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
 import { useRouter } from 'next/navigation';

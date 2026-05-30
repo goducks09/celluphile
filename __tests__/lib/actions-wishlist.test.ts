@@ -1,4 +1,5 @@
-import { addMovieToWishlist, removeMovieFromWishlist, getUserWishlist, getUserMovieAndWishlistIds } from '@/app/lib/actions';
+import { addMovieToWishlist, removeMovieFromWishlist } from '@/app/lib/actions';
+import { getUserWishlist, getUserMovieAndWishlistIds } from '@/app/lib/data';
 import UserWishlist from '@/app/models/userWishlist';
 import UserMovie from '@/app/models/userMovie';
 import UserEvent from '@/app/models/userEvent';

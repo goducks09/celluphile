@@ -1,4 +1,4 @@
-import { getRandomMovie } from '@/app/lib/actions';
+import { getRandomMovie } from '@/app/lib/data';
 import { auth } from '@/auth';
 import Movie from '@/app/models/movie';
 import UserMovie from '@/app/models/userMovie';

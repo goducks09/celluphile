@@ -2,8 +2,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SearchAddMovie from '@/app/ui/search-add-movie';
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    refresh: jest.fn(),
+  }),
+}));
+
 // Mock tmdb server actions
-const mockSearchMovies = jest.fn();
 const mockGetMovieDetails = jest.fn();
 jest.mock('@/app/lib/tmdb', () => ({
   searchMovies: (...args: any[]) => mockSearchMovies(...args),
@@ -55,6 +62,13 @@ const sampleMovie = {
   vote_average: 8.4,
 };
 
+const createResolvedPromise = (data: any) => {
+  const p = Promise.resolve(data) as any;
+  p.status = 'fulfilled';
+  p.value = data;
+  return p;
+};
+
 describe('SearchAddMovie', () => {
   beforeEach(() => {
     // Default to online
@@ -92,25 +106,45 @@ describe('SearchAddMovie', () => {
 
   it('empty query does not trigger search', async () => {
     const user = userEvent.setup();
+    const mockPush = jest.fn();
+    jest.spyOn(require('next/navigation'), 'useRouter').mockReturnValue({
+      push: mockPush,
+      refresh: jest.fn(),
+    });
+
     render(<SearchAddMovie />);
     // Leave the input empty and submit
     await user.click(screen.getByRole('button', { name: /search/i }));
 
     await waitFor(() => {
-      expect(mockSearchMovies).not.toHaveBeenCalled();
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 
-  it('search results rendered as list items', async () => {
+  it('search triggers router push navigation', async () => {
     const user = userEvent.setup();
-    mockSearchMovies.mockResolvedValue({
-      results: [sampleMovie],
-      total_results: 1,
+    const mockPush = jest.fn();
+    jest.spyOn(require('next/navigation'), 'useRouter').mockReturnValue({
+      push: mockPush,
+      refresh: jest.fn(),
     });
 
     render(<SearchAddMovie />);
     await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
     await user.click(screen.getByRole('button', { name: /search/i }));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('?q=Fight%20Club');
+    });
+  });
+
+  it('search results rendered as list items when searchPromise is passed', async () => {
+    const searchPromise = createResolvedPromise({
+      results: [sampleMovie],
+      total_results: 1,
+    });
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => {
       expect(screen.getByText('Fight Club')).toBeInTheDocument();
@@ -118,32 +152,14 @@ describe('SearchAddMovie', () => {
     });
   });
 
-  it('search API failure shows error toast', async () => {
-    const user = userEvent.setup();
-    mockSearchMovies.mockRejectedValue(new Error('Network error'));
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'test');
-    await user.click(screen.getByRole('button', { name: /search/i }));
-
-    await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('Failed to search TMDB for movies.');
-    });
-
-    (console.error as jest.Mock).mockRestore();
-  });
-
   it('add without selecting quality shows warning toast', async () => {
     const user = userEvent.setup();
-    mockSearchMovies.mockResolvedValue({
+    const searchPromise = createResolvedPromise({
       results: [sampleMovie],
       total_results: 1,
     });
 
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
-    await user.click(screen.getByRole('button', { name: /search/i }));
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => {
       expect(screen.getByText('Fight Club')).toBeInTheDocument();
@@ -161,7 +177,7 @@ describe('SearchAddMovie', () => {
 
   it('add with quality (online) calls addMovieToLibrary', async () => {
     const user = userEvent.setup();
-    mockSearchMovies.mockResolvedValue({
+    const searchPromise = createResolvedPromise({
       results: [sampleMovie],
       total_results: 1,
     });
@@ -170,9 +186,27 @@ describe('SearchAddMovie', () => {
       message: 'Movie added to library!',
     });
 
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
-    await user.click(screen.getByRole('button', { name: /search/i }));
+    // Mock global.fetch for details request
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 550,
+          title: 'Fight Club',
+          overview: 'An insomniac...',
+          poster_path: '/poster.jpg',
+          release_date: '1999-10-15',
+          genre_ids: [18, 53],
+          vote_average: 8.4,
+          genres: [{ id: 18, name: 'Drama' }, { id: 53, name: 'Thriller' }],
+          runtime: 139,
+          status: 'Released',
+          tagline: '',
+        }),
+      })
+    );
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => {
       expect(screen.getByText('Fight Club')).toBeInTheDocument();
@@ -197,7 +231,7 @@ describe('SearchAddMovie', () => {
 
   it('successful add shows success toast with message and clears quality selection', async () => {
     const user = userEvent.setup();
-    mockSearchMovies.mockResolvedValue({
+    const searchPromise = createResolvedPromise({
       results: [sampleMovie],
       total_results: 1,
     });
@@ -206,9 +240,20 @@ describe('SearchAddMovie', () => {
       message: 'Movie added to library!',
     });
 
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
-    await user.click(screen.getByRole('button', { name: /search/i }));
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 550,
+          title: 'Fight Club',
+          genres: [{ id: 18, name: 'Drama' }],
+          release_date: '1999-10-15',
+          runtime: 139,
+        }),
+      })
+    );
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
@@ -222,13 +267,11 @@ describe('SearchAddMovie', () => {
         expect.any(Object)
       );
     });
-
-    // The select box is unmounted when the movie is in the library
   });
 
   it('failed add shows error toast', async () => {
     const user = userEvent.setup();
-    mockSearchMovies.mockResolvedValue({
+    const searchPromise = createResolvedPromise({
       results: [sampleMovie],
       total_results: 1,
     });
@@ -237,9 +280,20 @@ describe('SearchAddMovie', () => {
       message: 'Movie already exists in your library.',
     });
 
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
-    await user.click(screen.getByRole('button', { name: /search/i }));
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 550,
+          title: 'Fight Club',
+          genres: [{ id: 18, name: 'Drama' }],
+          release_date: '1999-10-15',
+          runtime: 139,
+        }),
+      })
+    );
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
@@ -258,14 +312,25 @@ describe('SearchAddMovie', () => {
     const user = userEvent.setup();
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
 
-    mockSearchMovies.mockResolvedValue({
+    const searchPromise = createResolvedPromise({
       results: [sampleMovie],
       total_results: 1,
     });
 
-    render(<SearchAddMovie />);
-    await user.type(screen.getByPlaceholderText(/search by title/i), 'Fight Club');
-    await user.click(screen.getByRole('button', { name: /search/i }));
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 550,
+          title: 'Fight Club',
+          genres: [{ id: 18, name: 'Drama' }],
+          release_date: '1999-10-15',
+          runtime: 139,
+        }),
+      })
+    );
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 

@@ -1,13 +1,10 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import RandomMovieClient from '@/app/ui/random-movie';
-import { getRandomMovie } from '@/app/lib/actions';
+
+
 import { db } from '@/app/lib/db-client';
 import { toast } from 'sonner';
-
-jest.mock('@/app/lib/actions', () => ({
-    getRandomMovie: jest.fn(),
-}));
 
 jest.mock('@/app/lib/db-client', () => ({
     db: {
@@ -26,7 +23,7 @@ jest.mock('sonner', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: ({ fill, ...props }: any) => {
+    default: ({ fill, priority, ...props }: any) => {
         // eslint-disable-next-line @next/next/no-img-element
         return <img {...props} alt={props.alt} />
     },
@@ -70,6 +67,14 @@ describe('RandomMovieClient', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+        global.fetch = jest.fn().mockImplementation(() =>
+            Promise.resolve({
+                json: async () => ({
+                    success: true,
+                    movie: mockMovie2,
+                }),
+            })
+        );
     });
 
     it('renders initial movie title, year, and quality badge', () => {
@@ -92,24 +97,21 @@ describe('RandomMovieClient', () => {
         expect(link).toHaveAttribute('href', '/dashboard/library/100');
     });
 
-    it('Pick Another button calls getRandomMovie and updates the displayed movie', async () => {
-        (getRandomMovie as jest.Mock).mockResolvedValue({ success: true, movie: mockMovie2 });
-
+    it('Pick Another button calls api endpoint and updates the displayed movie', async () => {
         render(<RandomMovieClient initialMovie={mockMovie} />);
 
         const button = screen.getByRole('button', { name: /Pick Another/i });
         fireEvent.click(button);
 
         await waitFor(() => {
-            expect(getRandomMovie).toHaveBeenCalledTimes(1);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
         });
-
-        expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
     });
 
     it('Pick Another button is disabled while loading', async () => {
         let resolvePromise: any;
-        (getRandomMovie as jest.Mock).mockReturnValue(new Promise(resolve => {
+        global.fetch = jest.fn().mockReturnValue(new Promise(resolve => {
             resolvePromise = resolve;
         }));
 
@@ -121,7 +123,9 @@ describe('RandomMovieClient', () => {
         expect(screen.getByRole('button')).toBeDisabled();
         expect(screen.getByText(/Picking.../i)).toBeInTheDocument();
 
-        resolvePromise({ success: true, movie: mockMovie2 });
+        resolvePromise({
+            json: async () => ({ success: true, movie: mockMovie2 }),
+        });
 
         await waitFor(() => {
             expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
@@ -129,8 +133,15 @@ describe('RandomMovieClient', () => {
         });
     });
 
-    it('getRandomMovie fails -> shows error toast, keeps existing movie displayed', async () => {
-        (getRandomMovie as jest.Mock).mockResolvedValue({ success: false, message: 'Server error' });
+    it('API fails -> shows error toast, keeps existing movie displayed', async () => {
+        global.fetch = jest.fn().mockImplementation(() =>
+            Promise.resolve({
+                json: async () => ({
+                    success: false,
+                    message: 'Server error',
+                }),
+            })
+        );
 
         render(<RandomMovieClient initialMovie={mockMovie} />);
 
@@ -158,7 +169,7 @@ describe('RandomMovieClient', () => {
         });
 
         expect(screen.getByText('Second Random Movie')).toBeInTheDocument();
-        expect(getRandomMovie).not.toHaveBeenCalled();
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('Offline with empty Dexie cache -> shows "No movies offline." toast', async () => {

@@ -3,7 +3,8 @@ import webpush from 'web-push';
 import User from '../../app/models/user';
 import NotificationLog from '../../app/models/notificationLog';
 import { POST } from '../../app/api/notifications/daily/route';
-import { subscribeUser, unsubscribeUser, updateNotificationPreferences, getNotificationPreferences } from '../../app/lib/actions';
+import { subscribeUser, unsubscribeUser, updateNotificationPreferences } from '../../app/lib/actions';
+import { getNotificationPreferences } from '../../app/lib/data';
 import { auth } from '@/auth';
 
 jest.mock('web-push');
