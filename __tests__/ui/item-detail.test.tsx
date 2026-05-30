@@ -253,7 +253,7 @@ describe('ItemDetail Component', () => {
 
         expect(mockDelete).toHaveBeenCalled();
         expect(toast.success).toHaveBeenCalledWith('Movie removed from library.', { id: 'toast-id' });
-        expect(mockPush).toHaveBeenCalledWith('/dashboard/library');
+        expect(mockPush).toHaveBeenCalledWith('/library');
     });
 
     it('stays on page and shows error when online delete fails', async () => {
@@ -296,7 +296,7 @@ describe('ItemDetail Component', () => {
         });
 
         expect(toast.success).toHaveBeenCalledWith('Offline: Movie deleted locally. Returning to library.');
-        expect(mockPush).toHaveBeenCalledWith('/dashboard/library');
+        expect(mockPush).toHaveBeenCalledWith('/library');
         expect(removeMovieFromLibrary).not.toHaveBeenCalled();
     });
 

@@ -14,7 +14,7 @@ describe('E2E-3: Movie Library CRUD', () => {
 
   beforeEach(() => {
     cy.loginUser(testEmail, testPassword);
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
   });
 
   // E2E-3.1: Search for a movie via TMDB
@@ -87,7 +87,7 @@ describe('E2E-3: Movie Library CRUD', () => {
   // E2E-3.5: Library displays added movies
   it('displays added movies on the dashboard', () => {
     // Reload to see server-rendered library (Inception added in E2E-3.2)
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
 
     // Movie should be visible in the library section
     cy.contains('Your Movie Library').should('be.visible');
@@ -109,7 +109,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Reload to see the server-rendered library with both movies
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
 
     // Select "Blu-ray" quality filter (Inception is Blu-ray from E2E-3.2)
     cy.get('select').last().select('Blu-ray');
@@ -123,7 +123,7 @@ describe('E2E-3: Movie Library CRUD', () => {
   it('searches library by title', () => {
     // Both Inception (Blu-ray) and The Matrix (DVD) are in the library
     // Reload to see the server-rendered library
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
 
     // Search for a partial title match
     cy.get('input[placeholder="Search your library..."]').type(searchTerm.substring(0, 4));
@@ -136,7 +136,7 @@ describe('E2E-3: Movie Library CRUD', () => {
   // E2E-3.8: Remove movie from library
   it('removes a movie from the library', () => {
     // Reload to see server-rendered library with movies from prior tests
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
     cy.contains('Your Movie Library').should('be.visible');
 
     // Click on the movie card to go to detail page
@@ -155,19 +155,19 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains('removed', { matchCase: false, timeout: 10000 }).should('exist');
 
     // Go back to library
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
     cy.contains('h3', searchTerm).should('not.exist');
   });
 
   // E2E-3.9: Empty library state
   it('shows empty library message when all movies removed', () => {
     // Reload to see current server-rendered library
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
 
     // Remove remaining movies by navigating to detail page
     function removeAllMovies() {
       cy.get('body').then(($body) => {
-        const links = $body.find('a[href^="/dashboard/library/"]');
+        const links = $body.find('a[href^="/library/"]');
         if (links.length > 0) {
           cy.wrap(links.first()).click();
           cy.contains('button', 'Remove').click();
@@ -179,7 +179,7 @@ describe('E2E-3: Movie Library CRUD', () => {
           });
 
           cy.contains('removed', { matchCase: false, timeout: 10000 }).should('exist');
-          cy.visit('/dashboard/library');
+          cy.visit('/library');
           cy.wait(500);
           removeAllMovies();
         }

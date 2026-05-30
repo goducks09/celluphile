@@ -191,7 +191,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
                     {movies.map((movie) => (
-                        <Link key={movie.tmdbId} href={`/dashboard/library/${movie.tmdbId}`} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
+                        <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                             {movie.poster ? (
                                 <div className="relative w-full h-80">
                                     <Image

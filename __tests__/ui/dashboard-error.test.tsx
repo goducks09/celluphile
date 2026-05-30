@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ErrorBoundary from '@/app/dashboard/error';
+import ErrorBoundary from '@/app/(app)/error';
 
 describe('Dashboard Error Boundary', () => {
   const mockError = new Error('Test error') as Error & { digest?: string };

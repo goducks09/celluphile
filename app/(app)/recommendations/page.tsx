@@ -36,7 +36,7 @@ export default async function RecommendationsPage() {
                     We need a few movies in your library to start recommending new ones. Add some of your favorites and check back here!
                 </p>
                 <Link
-                    href="/dashboard/library"
+                    href="/library"
                     className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                     Go to Library

@@ -35,8 +35,8 @@ import type { BaseSerializedMovie, SerializedMovie, SerializedWishlistMovie } fr
 
 function revalidateLibrary(tmdbId?: number) {
     revalidatePath('/dashboard');
-    revalidatePath('/dashboard/library');
-    if (tmdbId) revalidatePath(`/dashboard/library/${tmdbId}`, 'page');
+    revalidatePath('/library');
+    if (tmdbId) revalidatePath(`/library/${tmdbId}`, 'page');
 }
 
 // ============================================================
@@ -131,7 +131,7 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
         await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
 
         revalidateLibrary();
-        revalidatePath('/dashboard/wishlist');
+        revalidatePath('/wishlist');
 
         return { success: true, message: 'Movie added to library successfully!' };
     } catch (error: any) {
@@ -254,7 +254,7 @@ export async function addMovieToWishlist(tmdbId: number) {
         });
         await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
 
-        revalidatePath('/dashboard/wishlist');
+        revalidatePath('/wishlist');
 
         return { success: true, message: 'Movie added to wishlist.' };
     } catch (err) {
@@ -289,7 +289,7 @@ export async function removeMovieFromWishlist(tmdbId: number) {
         });
         await newEvent.save().catch((e: unknown) => console.error('Failed to log event:', e));
 
-        revalidatePath('/dashboard/wishlist');
+        revalidatePath('/wishlist');
         return { success: true, message: 'Movie removed from wishlist.' };
     } catch (err) {
         console.error('Error removing from wishlist:', err);

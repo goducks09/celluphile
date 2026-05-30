@@ -29,7 +29,7 @@ jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
 jest.mock('@/auth', () => ({ auth: jest.fn().mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } }) }));
 
 jest.mock('@/app/models/userMovie', () => {
-    const mockModel: any = jest.fn(function(this: any, data: any) {
+    const mockModel: any = jest.fn(function (this: any, data: any) {
         this.data = data;
     });
     mockModel.prototype.save = jest.fn().mockResolvedValue(true);
@@ -54,7 +54,7 @@ jest.mock('@/app/models/movie', () => ({
 }));
 
 jest.mock('@/app/models/userEvent', () => {
-    return { __esModule: true, default: function() { return { save: jest.fn().mockResolvedValue(true) }; } };
+    return { __esModule: true, default: function () { return { save: jest.fn().mockResolvedValue(true) }; } };
 });
 
 jest.mock('@/app/lib/tmdb', () => ({ getMovieDetails: jest.fn() }));
@@ -65,7 +65,7 @@ describe('addMovieToLibrary wishlist cleanup', () => {
     it('UserWishlist.findOneAndDelete is called before UserMovie is created', async () => {
         (UserMovie.findOne as jest.Mock).mockResolvedValueOnce(null);
         (Movie.findOne as jest.Mock).mockResolvedValueOnce({ _id: '123' });
-        
+
         await addMovieToLibrary({ tmdbId: 1, quality: '4K' });
         expect(UserWishlist.findOneAndDelete).toHaveBeenCalledWith({
             userId: expect.anything(), tmdbId: 1
@@ -76,25 +76,25 @@ describe('addMovieToLibrary wishlist cleanup', () => {
         (UserMovie.findOne as jest.Mock).mockResolvedValueOnce(null);
         (Movie.findOne as jest.Mock).mockResolvedValueOnce({ _id: '123' });
         (UserWishlist.findOneAndDelete as jest.Mock).mockResolvedValueOnce({ addedAt: new Date() });
-        
+
         jest.spyOn(UserMovie.prototype, 'save').mockRejectedValueOnce(new Error('Save failed'));
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
         const result = await addMovieToLibrary({ tmdbId: 1, quality: '4K' });
         expect(result.success).toBe(false);
         expect(UserWishlist.create).toHaveBeenCalledWith({
             userId: expect.anything(), tmdbId: 1, addedAt: expect.any(Date)
         });
-        
+
         consoleSpy.mockRestore();
     });
 
-    it('revalidatePath(/dashboard/wishlist) is called alongside library revalidation', async () => {
+    it('revalidatePath(/wishlist) is called alongside library revalidation', async () => {
         (UserMovie.findOne as jest.Mock).mockResolvedValueOnce(null);
         (Movie.findOne as jest.Mock).mockResolvedValueOnce({ _id: '123' });
 
         await addMovieToLibrary({ tmdbId: 1, quality: '4K' });
-        expect(revalidatePath).toHaveBeenCalledWith('/dashboard/wishlist');
-        expect(revalidatePath).toHaveBeenCalledWith('/dashboard/library');
+        expect(revalidatePath).toHaveBeenCalledWith('/wishlist');
+        expect(revalidatePath).toHaveBeenCalledWith('/library');
     });
 });

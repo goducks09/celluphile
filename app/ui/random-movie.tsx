@@ -56,7 +56,7 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
 
     return (
         <div className="w-full flex flex-col items-center gap-4 sm:gap-5">
-            <Link href={`/dashboard/library/${movie.tmdbId}`} className={`block w-full transition-opacity ${loading ? 'opacity-50' : 'opacity-100'} hover:scale-[1.02] transition-transform duration-300`}>
+            <Link href={`/library/${movie.tmdbId}`} className={`block w-full transition-opacity ${loading ? 'opacity-50' : 'opacity-100'} hover:scale-[1.02] transition-transform duration-300`}>
                 <div className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-[var(--border)]" style={{ background: 'var(--background-card)' }}>
                     {movie.poster ? (
                         <div className="relative w-full sm:w-auto h-[30vh] sm:h-[45vh] max-h-[260px] sm:max-h-[340px] min-h-[160px] sm:min-h-[220px] aspect-[2/3] bg-zinc-900 mx-auto flex-shrink-0">

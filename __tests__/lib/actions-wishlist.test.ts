@@ -99,7 +99,7 @@ describe('Wishlist Server Actions', () => {
             }));
 
             // Verify revalidatePath was called
-            expect(revalidatePath).toHaveBeenCalledWith('/dashboard/wishlist');
+            expect(revalidatePath).toHaveBeenCalledWith('/wishlist');
         });
     });
 
@@ -117,7 +117,7 @@ describe('Wishlist Server Actions', () => {
             }));
 
             // Verify revalidatePath was called
-            expect(revalidatePath).toHaveBeenCalledWith('/dashboard/wishlist');
+            expect(revalidatePath).toHaveBeenCalledWith('/wishlist');
         });
     });
 

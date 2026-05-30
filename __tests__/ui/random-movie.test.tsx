@@ -91,10 +91,10 @@ describe('RandomMovieClient', () => {
         expect(images[0]).toHaveAttribute('src', expect.stringContaining('/poster1.jpg'));
     });
 
-    it('movie card links to /dashboard/library/{tmdbId}', () => {
+    it('movie card links to /library/{tmdbId}', () => {
         render(<RandomMovieClient initialMovie={mockMovie} />);
         const link = screen.getByRole('link');
-        expect(link).toHaveAttribute('href', '/dashboard/library/100');
+        expect(link).toHaveAttribute('href', '/library/100');
     });
 
     it('Pick Another button calls api endpoint and updates the displayed movie', async () => {

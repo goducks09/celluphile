@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ErrorComponent from '@/app/dashboard/error';
+import ErrorComponent from '@/app/(app)/error';
 
 // Mock @heroicons/react
 jest.mock('@heroicons/react/24/outline', () => ({

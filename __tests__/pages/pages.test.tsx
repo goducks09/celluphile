@@ -92,17 +92,17 @@ describe('Page Components', () => {
     });
   });
   describe('Random page', () => {
-    it('renders empty-state message with link to /dashboard/library if library is empty', async () => {
+    it('renders empty-state message with link to /library if library is empty', async () => {
       const { getRandomMovie } = require('@/app/lib/data');
       getRandomMovie.mockResolvedValue({ success: false, message: 'Your library is empty.' });
       
-      const RandomPage = (await import('@/app/dashboard/random/page')).default;
+      const RandomPage = (await import('@/app/(app)/random/page')).default;
       render(await RandomPage());
       
       expect(screen.getByText('Your library is empty.')).toBeInTheDocument();
       expect(screen.getByText('It looks like there are no movies available to pick from.')).toBeInTheDocument();
       const link = screen.getByRole('link', { name: /go to library/i });
-      expect(link).toHaveAttribute('href', '/dashboard/library');
+      expect(link).toHaveAttribute('href', '/library');
     });
 
     it('renders RandomMovieClient with returned movie prop', async () => {
@@ -112,7 +112,7 @@ describe('Page Components', () => {
         movie: { title: 'Test Random Movie', tmdbId: 123 } 
       });
       
-      const RandomPage = (await import('@/app/dashboard/random/page')).default;
+      const RandomPage = (await import('@/app/(app)/random/page')).default;
       render(await RandomPage());
       
       expect(screen.getByTestId('random-movie-client')).toHaveTextContent('Test Random Movie');

@@ -19,7 +19,7 @@ export default async function Page({ params }: { params: Promise<{ tmdbId: strin
 
     if (!result.success || !result.movie) {
         // Either not found or does not belong to the user
-        redirect('/dashboard/library');
+        redirect('/library');
     }
 
     return <ItemDetail movie={result.movie} />;

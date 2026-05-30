@@ -13,7 +13,7 @@ export default function PushNotificationBanner() {
     const { isSupported, subscription, subscribeToPush } = usePushNotifications();
 
     // Don't render on pages that have their own push-notification controls.
-    if (pathname.startsWith('/dashboard/settings')) return null;
+    if (pathname.startsWith('/settings')) return null;
 
     // Not supported or already subscribed → nothing to show.
     if (!isSupported || subscription) return null;

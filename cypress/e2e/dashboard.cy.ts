@@ -29,7 +29,7 @@ describe('E2E-5: Dashboard Page', () => {
     // First add a movie so library section has content
     cy.loginUser(testEmail, testPassword);
 
-    cy.visit('/dashboard/library');
+    cy.visit('/library');
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();
     cy.contains('Inception').should('be.visible');

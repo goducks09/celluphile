@@ -18,9 +18,9 @@ describe('E2E-2: Route Protection & Authorization', () => {
     cy.url().should('include', '/login');
   });
 
-  // E2E-2.2: Unauthenticated access to /dashboard/library
-  it('redirects unauthenticated user from /dashboard/library to /login', () => {
-    cy.visit('/dashboard/library');
+  // E2E-2.2: Unauthenticated access to /library
+  it('redirects unauthenticated user from /library to /login', () => {
+    cy.visit('/library');
     cy.url().should('include', '/login');
   });
 

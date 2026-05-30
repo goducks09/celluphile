@@ -54,8 +54,8 @@ export default function Navigation({ email, signOutAction }: { email?: string | 
 
     const isDashboardRoot = pathname === '/dashboard';
 
-    const upHref = pathname.startsWith('/dashboard/library/') && pathname !== '/dashboard/library'
-        ? '/dashboard/library'
+    const upHref = pathname.startsWith('/library/') && pathname !== '/library'
+        ? '/library'
         : '/dashboard';
 
     const closeDrawer = () => setDrawerOpen(false);
@@ -98,11 +98,11 @@ export default function Navigation({ email, signOutAction }: { email?: string | 
 
                 <nav className="nav-links">
                     <NavLink href="/dashboard" onNavigate={closeDrawer}>Dashboard</NavLink>
-                    <NavLink href="/dashboard/library" onNavigate={closeDrawer}>Library</NavLink>
-                    <NavLink href="/dashboard/wishlist" onNavigate={closeDrawer}>Wishlist</NavLink>
-                    <NavLink href="/dashboard/random" onNavigate={closeDrawer}>Random Movie</NavLink>
-                    <NavLink href="/dashboard/recommendations" onNavigate={closeDrawer}>Recommendations</NavLink>
-                    <NavLink href="/dashboard/settings" onNavigate={closeDrawer}>Settings</NavLink>
+                    <NavLink href="/library" onNavigate={closeDrawer}>Library</NavLink>
+                    <NavLink href="/wishlist" onNavigate={closeDrawer}>Wishlist</NavLink>
+                    <NavLink href="/random" onNavigate={closeDrawer}>Random Movie</NavLink>
+                    <NavLink href="/recommendations" onNavigate={closeDrawer}>Recommendations</NavLink>
+                    <NavLink href="/settings" onNavigate={closeDrawer}>Settings</NavLink>
                 </nav>
 
                 <div className="nav-user-section">

@@ -26,7 +26,7 @@ async function sendRecommendationNotification(userId: string) {
         {
             title: 'New Movie Recommendation',
             body: "We've found a new recommendation for you: Inception! Check it out in your recommendations.",
-            url: '/dashboard/recommendations'
+            url: '/recommendations'
         },
         { tmdbId: 27205 }
     );

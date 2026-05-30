@@ -17,7 +17,7 @@ export default async function RandomPage() {
                     <Link href="/dashboard" className="stub-back-link">
                         ← Back to Dashboard
                     </Link>
-                    <Link href="/dashboard/library" className="stub-back-link">
+                    <Link href="/library" className="stub-back-link">
                         ← Go to Library
                     </Link>
                 </div>

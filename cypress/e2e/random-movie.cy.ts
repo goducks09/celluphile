@@ -15,14 +15,14 @@ describe('Random Movie Page', () => {
         cy.loginUser(testEmail, testPassword);
     });
 
-    it('Scenario 16: /dashboard/random with an empty library shows an empty-state message', () => {
-        cy.visit('/dashboard/random');
+    it('Scenario 16: /random with an empty library shows an empty-state message', () => {
+        cy.visit('/random');
         cy.contains('It looks like there are no movies available to pick from.');
-        cy.get('a').contains('Go to Library').should('have.attr', 'href', '/dashboard/library');
+        cy.get('a').contains('Go to Library').should('have.attr', 'href', '/library');
     });
 
     it('Setup: Add a movie to test non-empty states', () => {
-        cy.visit('/dashboard/library');
+        cy.visit('/library');
         // Type into search box to find a movie to add
         cy.get('input[placeholder="Search by title..."]').type('The Matrix');
 
@@ -40,25 +40,25 @@ describe('Random Movie Page', () => {
         cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
     });
 
-    it('Scenario 17: /dashboard/random with movies in library displays a movie title and poster', () => {
-        cy.visit('/dashboard/random');
+    it('Scenario 17: /random with movies in library displays a movie title and poster', () => {
+        cy.visit('/random');
         cy.contains('The Matrix').should('be.visible');
         cy.contains('4K').should('be.visible');
         cy.get('img[alt="The Matrix poster"]').should('exist');
     });
 
     it('Scenario 18: Clicking the movie card navigates to the ItemDetail page', () => {
-        cy.visit('/dashboard/random');
+        cy.visit('/random');
         // Click the movie card (it's a Link wrapping the content)
         cy.contains('h3', 'The Matrix').click();
 
-        cy.url().should('include', '/dashboard/library/');
+        cy.url().should('include', '/library/');
         // The tmdbId for The Matrix in TMDB is 603
         cy.url().should('include', '603');
     });
 
     it('Scenario 19 & 20: "Pick Another" button is visually disabled/loading during the request and displays a movie', () => {
-        cy.visit('/dashboard/random');
+        cy.visit('/random');
 
         cy.contains('The Matrix').should('be.visible');
 

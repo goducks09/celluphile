@@ -33,7 +33,7 @@ export default function HomeDashboard({
 
                 <div className="home-actions-list">
                     {/* Add a Movie */}
-                    <Link href="/dashboard/library" className="home-action-btn" id="action-add-movie">
+                    <Link href="/library" className="home-action-btn" id="action-add-movie">
                         <div className="home-action-btn-content">
                             <span className="home-action-btn-label">Add a movie</span>
                             <span className="home-action-btn-sub">Search and add to your library</span>
@@ -42,7 +42,7 @@ export default function HomeDashboard({
                     </Link>
 
                     {/* Pick a Random Movie */}
-                    <Link href="/dashboard/random" className="home-action-btn home-action-btn--accent" id="action-random-movie">
+                    <Link href="/random" className="home-action-btn home-action-btn--accent" id="action-random-movie">
                         <div className="home-action-btn-content">
                             <span className="home-action-btn-label home-action-btn-label--accent">Pick a random movie</span>
                             <span className="home-action-btn-sub">Let your library decide tonight</span>
@@ -50,7 +50,7 @@ export default function HomeDashboard({
                     </Link>
 
                     {/* Recommended For Me */}
-                    <Link href="/dashboard/recommendations" className="home-action-btn home-action-btn--accent" id="action-recommended">
+                    <Link href="/recommendations" className="home-action-btn home-action-btn--accent" id="action-recommended">
                         <div className="home-action-btn-content">
                             <span className="home-action-btn-label home-action-btn-label--accent">Recommended for me</span>
                             <span className="home-action-btn-sub">Based on what you own</span>
@@ -102,7 +102,7 @@ export default function HomeDashboard({
                 ) : (
                     <div className="home-movie-grid">
                         {filteredMovies.map((movie) => (
-                            <Link key={movie.tmdbId} href={`/dashboard/library/${movie.tmdbId}`} className="home-movie-card">
+                            <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="home-movie-card">
                                 {/* Quality Badge */}
                                 <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality] || 'bg-gray-500'}`}>
                                     {movie.quality}
@@ -135,7 +135,7 @@ export default function HomeDashboard({
 
                 {/* View Full Library Link */}
                 <div className="home-view-all">
-                    <Link href="/dashboard/library" className="home-view-all-link">
+                    <Link href="/library" className="home-view-all-link">
                         View full library →
                     </Link>
                 </div>

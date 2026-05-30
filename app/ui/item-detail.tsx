@@ -97,7 +97,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                         timestamp: Date.now()
                     });
                     toast.success('Offline: Movie deleted locally. Returning to library.');
-                    router.push('/dashboard/library');
+                    router.push('/library');
                 } catch (err) {
                     console.error('Failed to queue offline delete', err);
                     toast.error('Failed to delete movie offline.');
@@ -112,7 +112,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                 if (result.success) {
                     toast.success('Movie removed from library.', { id: loadingToast });
                     await db.movies.where('tmdbId').equals(movie.tmdbId).delete().catch(e => console.error("Cache update failed", e));
-                    router.push('/dashboard/library');
+                    router.push('/library');
                 } else {
                     toast.error(result.message || 'Failed to remove movie.', { id: loadingToast });
                     setIsDeleting(false);
@@ -214,7 +214,12 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                         </div>
                     )}
 
-                    <div className="mt-6 flex flex-col gap-4">
+                    <div className="mt-4 flex flex-col">
+                        <h3 className="item-section-label">Overview</h3>
+                        <p className="text-[var(--foreground)]">{movie.overview}</p>
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-4">
                         {movie.directors && movie.directors.length > 0 && (
                             <div>
                                 <h3 className="item-section-label">Director</h3>
