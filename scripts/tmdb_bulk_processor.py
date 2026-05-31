@@ -96,6 +96,30 @@ def fetch_movie_details(input_csv: str, output_json: str):
         print(f"Failed to write output JSON {output_json}: {e}")
         sys.exit(1)
 
+def embed_movies(input_json: str, output_json: str):
+    """
+    Reads a JSON file containing movie details with '_embeddingText',
+    and generates embeddings using the shared utils.generate_embeddings function.
+    """
+    try:
+        with open(input_json, 'r', encoding='utf-8') as f:
+            movies_metadata = json.load(f)
+    except Exception as e:
+        print(f"Failed to read input JSON {input_json}: {e}")
+        sys.exit(1)
+
+    # Filter out entries that don't have _embeddingText just in case
+    valid_metadata = [m for m in movies_metadata if "_embeddingText" in m]
+    
+    if not valid_metadata:
+        print("No '_embeddingText' fields found in input JSON.")
+        sys.exit(1)
+        
+    if len(valid_metadata) != len(movies_metadata):
+        print(f"Warning: Only {len(valid_metadata)} out of {len(movies_metadata)} objects contain '_embeddingText'. Only these will be embedded.")
+
+    utils.generate_embeddings(valid_metadata, output_json)
+
 def main():
     parser = argparse.ArgumentParser(description="Bulk process movie data using TMDB API.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -113,6 +137,11 @@ def main():
     # Unique sub-command
     unique_parser = subparsers.add_parser("unique", help="Find unique movies from search.csv that don't exist in movie_metadata.json.")
 
+    # Embed sub-command
+    embed_parser = subparsers.add_parser("embed", help="Generate embeddings for a JSON file containing movie details with '_embeddingText'.")
+    embed_parser.add_argument("input_json", help="Input JSON file containing movie details with '_embeddingText'.")
+    embed_parser.add_argument("output_json", help="Output JSON file to save the embedded records.")
+
     args = parser.parse_args()
 
     if args.command == "search":
@@ -121,6 +150,8 @@ def main():
         fetch_movie_details(args.input_csv, args.output_json)
     elif args.command == "unique":
         utils.unique_movies()
+    elif args.command == "embed":
+        embed_movies(args.input_json, args.output_json)
 
 if __name__ == "__main__":
     main()
