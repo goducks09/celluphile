@@ -7,7 +7,7 @@ export interface LocalMovie {
     title: string;
     poster: string;
     genres: string[];
-    quality: Quality;
+    quality: Quality[];
     customNotes?: string;
     addedAt: Date;
     actors: { firstName: string; lastName: string; fullName: string }[];
@@ -33,7 +33,7 @@ export interface LocalWishlistMovie {
 type SyncPayload =
     | { action: 'add'; payload: LocalMovie }
     | { action: 'remove'; payload: { tmdbId: number } }
-    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: Quality; customNotes?: string } } }
+    | { action: 'update'; payload: { tmdbId: number; updateData: { quality?: Quality[]; customNotes?: string } } }
     | { action: 'wishlist-add'; payload: { tmdbId: number } }
     | { action: 'wishlist-remove'; payload: { tmdbId: number } };
 

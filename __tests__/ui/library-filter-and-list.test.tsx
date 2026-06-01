@@ -81,7 +81,7 @@ const createMovie = (overrides: Partial<SerializedMovie> = {}): SerializedMovie 
   title: 'Fight Club',
   poster: '/poster.jpg',
   genres: ['Drama'],
-  quality: 'Blu-ray',
+  quality: ['Blu-ray'],
   addedAt: new Date('2024-01-01'),
   actors: [],
   directors: [],

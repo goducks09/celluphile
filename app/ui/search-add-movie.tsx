@@ -22,8 +22,8 @@ function SearchResults({
     libraryIds: Set<number>;
     wishlistIds: Set<number>;
     handleWishlistToggle: (movie: TMDBMovie) => void;
-    selectedQualities: Record<number, string>;
-    setSelectedQualities: (val: Record<number, string>) => void;
+    selectedQualities: Record<number, Quality[]>;
+    setSelectedQualities: (val: Record<number, Quality[]>) => void;
     handleAddMovie: (movie: TMDBMovie) => void;
 }) {
     const data = use(searchPromise);
@@ -64,21 +64,34 @@ function SearchResults({
                                     {inWishlist ? '♥ In Wishlist (Undo)' : '♡ Add to Wishlist'}
                                 </button>
                                 
-                                <div className="flex items-center gap-2">
-                                    <select
-                                        value={selectedQualities[movie.id] || ''}
-                                        onChange={(e) => setSelectedQualities({ ...selectedQualities, [movie.id]: e.target.value })}
-                                        className="p-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                        style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-                                    >
-                                        <option value="" disabled>Quality</option>
-                                        {QUALITIES.map((q) => (
-                                            <option key={q} value={q}>{q}</option>
-                                        ))}
-                                    </select>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs font-medium" style={{ color: 'var(--foreground-muted)' }}>Format:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {QUALITIES.map((q) => {
+                                            const current = selectedQualities[movie.id] || [];
+                                            return (
+                                                <label key={q} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={q}
+                                                        checked={current.includes(q)}
+                                                        onChange={(e) => {
+                                                            const prev = selectedQualities[movie.id] || [];
+                                                            const next = e.target.checked
+                                                                ? [...prev, q]
+                                                                : prev.filter((v) => v !== q);
+                                                            setSelectedQualities({ ...selectedQualities, [movie.id]: next });
+                                                        }}
+                                                        className="accent-indigo-500 w-3.5 h-3.5"
+                                                    />
+                                                    {q}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
                                     <button
                                         onClick={() => handleAddMovie(movie)}
-                                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                                        className="mt-1 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                                     >
                                         Add to Library
                                     </button>
@@ -106,7 +119,7 @@ export default function SearchAddMovie({
     const router = useRouter();
     const [query, setQuery] = useState(initialQuery);
     const [isPending, startTransition] = useTransition();
-    const [selectedQualities, setSelectedQualities] = useState<Record<number, string>>({});
+    const [selectedQualities, setSelectedQualities] = useState<Record<number, Quality[]>>({});
     
     const [libraryIds, setLibraryIds] = useState<Set<number>>(new Set(initialLibraryIds));
     const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set(initialWishlistIds));
@@ -215,8 +228,8 @@ export default function SearchAddMovie({
     const handleAddMovie = (movie: TMDBMovie) => {
         startTransition(async () => {
             const quality = selectedQualities[movie.id];
-            if (!quality) {
-                toast.warning(`Please select a quality format before adding ${movie.title}.`);
+            if (!quality || quality.length === 0) {
+                toast.warning(`Please select at least one quality format before adding ${movie.title}.`);
                 return;
             }
 
@@ -237,7 +250,7 @@ export default function SearchAddMovie({
                 title: movie.title,
                 poster: movie.poster_path || '',
                 genres: details.genres.map((g: any) => g.name),
-                quality: quality as Quality,
+                quality: quality as Quality[],
                 actors,
                 directors,
                 releaseDate: details.release_date || undefined,

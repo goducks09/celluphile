@@ -92,9 +92,9 @@ describe('WishlistList Component', () => {
         fireEvent.click(moveButton);
         expect(toast.warning).toHaveBeenCalled();
         
-        // Select quality
-        const selects = screen.getAllByRole('combobox');
-        fireEvent.change(selects[1], { target: { value: '4K' } });
+        // Select quality (click the 4K checkbox in Movie 1's card)
+        const fourKCheckboxes = screen.getAllByRole('checkbox', { name: /4k/i });
+        fireEvent.click(fourKCheckboxes[0]);
         
         // Trigger move to library
         fireEvent.click(moveButton);
@@ -106,7 +106,7 @@ describe('WishlistList Component', () => {
         resolveServerAction!({ success: true });
         
         await waitFor(() => {
-            expect(addMovieToLibrary).toHaveBeenCalledWith({ tmdbId: 1, quality: '4K' });
+            expect(addMovieToLibrary).toHaveBeenCalledWith({ tmdbId: 1, quality: ['4K'] });
             expect(toast.success).toHaveBeenCalled();
         });
     });

@@ -23,7 +23,7 @@ export type BaseSerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embeddin
 };
 
 export type SerializedMovie = BaseSerializedMovie & {
-    quality: Quality;
+    quality: Quality[];
     customNotes?: string;
 };
 
@@ -371,7 +371,7 @@ export async function getLibraryStats(): Promise<{ success: boolean; message?: s
                 $group: {
                     _id: null,
                     totalFilms: { $sum: 1 },
-                    in4K: { $sum: { $cond: [{ $eq: ['$quality', '4K'] }, 1, 0] } },
+                    in4K: { $sum: { $cond: [{ $in: ['4K', '$quality'] }, 1, 0] } },
                     thisMonth: { $sum: { $cond: [{ $gte: ['$addedAt', startOfMonth] }, 1, 0] } },
                 },
             },
@@ -477,7 +477,7 @@ export async function getRecommendations(): Promise<{ success: boolean; message?
             _id: m._id.toString(),
             userId: session.user.id,
             tmdbId: m.tmdbId,
-            quality: 'DVD' as Quality, // placeholder
+            quality: [] as Quality[], // recommendations don't have a stored quality
             addedAt: new Date().toISOString(),
             customNotes: '',
             title: m.title,

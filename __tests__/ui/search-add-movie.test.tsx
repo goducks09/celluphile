@@ -170,7 +170,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => {
       expect(mockToast.warning).toHaveBeenCalledWith(
-        expect.stringContaining('Please select a quality format')
+        expect.stringContaining('Please select at least one quality format')
       );
     });
   });
@@ -212,8 +212,8 @@ describe('SearchAddMovie', () => {
       expect(screen.getByText('Fight Club')).toBeInTheDocument();
     });
 
-    // Select quality
-    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
+    // Select quality (check 'Blu-ray' checkbox)
+    await user.click(screen.getByRole('checkbox', { name: /blu-ray/i }));
 
     // Add to library
     await user.click(screen.getByRole('button', { name: /add to library/i }));
@@ -223,7 +223,7 @@ describe('SearchAddMovie', () => {
         expect.objectContaining({
           tmdbId: 550,
           title: 'Fight Club',
-          quality: 'Blu-ray',
+          quality: ['Blu-ray'],
         })
       );
     });
@@ -257,8 +257,8 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    const qualitySelect = screen.getByDisplayValue('Quality');
-    await user.selectOptions(qualitySelect, 'Blu-ray');
+    const bluRayCheckbox = screen.getByRole('checkbox', { name: /blu-ray/i });
+    await user.click(bluRayCheckbox);
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
     await waitFor(() => {
@@ -297,7 +297,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
+    await user.click(screen.getByRole('checkbox', { name: /blu-ray/i }));
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
     await waitFor(() => {
@@ -334,7 +334,7 @@ describe('SearchAddMovie', () => {
 
     await waitFor(() => expect(screen.getByText('Fight Club')).toBeInTheDocument());
 
-    await user.selectOptions(screen.getByDisplayValue('Quality'), 'Blu-ray');
+    await user.click(screen.getByRole('checkbox', { name: /blu-ray/i }));
     await user.click(screen.getByRole('button', { name: /add to library/i }));
 
     await waitFor(() => {
@@ -342,7 +342,7 @@ describe('SearchAddMovie', () => {
         expect.objectContaining({
           tmdbId: 550,
           title: 'Fight Club',
-          quality: 'Blu-ray',
+          quality: ['Blu-ray'],
         })
       );
       expect(mockDbSyncQueueAdd).toHaveBeenCalledWith(

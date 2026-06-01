@@ -33,7 +33,7 @@ describe('E2E-5: Dashboard Page', () => {
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();
     cy.contains('Inception').should('be.visible');
-    cy.get('select').first().select('Blu-ray');
+    cy.get('input[type="checkbox"][value="Blu-ray"]').first().check();
     cy.contains('button', 'Add to Library').first().click();
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 

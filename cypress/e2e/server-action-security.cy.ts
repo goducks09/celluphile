@@ -28,7 +28,7 @@ describe('E2E-4: Server Action Security', () => {
         title: 'Fight Club',
         poster: '/poster.jpg',
         genres: ['Drama'],
-        quality: 'Blu-ray',
+        quality: ['Blu-ray'],
       }]),
       failOnStatusCode: false,
       followRedirect: false,
@@ -85,7 +85,7 @@ describe('E2E-4: Server Action Security', () => {
     cy.get('input[placeholder="Search by title..."]').type('Inception');
     cy.contains('button', 'Search').click();
     cy.contains('Inception').should('be.visible');
-    cy.get('select').first().select('4K');
+    cy.get('input[type="checkbox"][value="4K"]').first().check();
     cy.contains('button', 'Add to Library').first().click();
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');
 

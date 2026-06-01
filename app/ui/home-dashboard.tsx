@@ -17,7 +17,7 @@ export default function HomeDashboard({
     const [activeFilter, setActiveFilter] = useState<Quality | ''>('');
 
     const filteredMovies = activeFilter
-        ? recentMovies.filter((m) => m.quality === activeFilter)
+        ? recentMovies.filter((m) => m.quality.includes(activeFilter))
         : recentMovies;
 
     const filters: { label: string; value: Quality | '' }[] = [
@@ -103,9 +103,9 @@ export default function HomeDashboard({
                     <div className="home-movie-grid">
                         {filteredMovies.map((movie, index) => (
                             <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="home-movie-card">
-                                {/* Quality Badge */}
-                                <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality] || 'bg-gray-500'}`}>
-                                    {movie.quality}
+                                {/* Quality Badges */}
+                                <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality[0]] || 'bg-gray-500'}`}>
+                                    {movie.quality.join(' + ')}
                                 </span>
 
                                 {/* Poster or Placeholder */}

@@ -11,7 +11,7 @@ import {
 describe('addMovieSchema', () => {
   const validMovie = {
     tmdbId: 550,
-    quality: 'Blu-ray' as const,
+    quality: ['Blu-ray'] as const,
   };
 
   it('valid input passes', () => {
@@ -28,7 +28,7 @@ describe('addMovieSchema', () => {
   });
 
   it('invalid quality is rejected', () => {
-    const result = addMovieSchema.safeParse({ ...validMovie, quality: 'VHS' });
+    const result = addMovieSchema.safeParse({ ...validMovie, quality: ['VHS'] });
     expect(result.success).toBe(false);
   });
 
@@ -175,7 +175,7 @@ describe('searchPaginationSchema', () => {
 
 describe('updateMovieSchema', () => {
   it('valid quality update passes', () => {
-    const result = updateMovieSchema.safeParse({ quality: 'DVD' });
+    const result = updateMovieSchema.safeParse({ quality: ['DVD'] });
     expect(result.success).toBe(true);
   });
 
@@ -185,7 +185,7 @@ describe('updateMovieSchema', () => {
   });
 
   it('both fields together passes', () => {
-    const result = updateMovieSchema.safeParse({ quality: '4K', customNotes: 'Upgraded!' });
+    const result = updateMovieSchema.safeParse({ quality: ['4K'], customNotes: 'Upgraded!' });
     expect(result.success).toBe(true);
   });
 
@@ -195,7 +195,7 @@ describe('updateMovieSchema', () => {
   });
 
   it('invalid quality is rejected', () => {
-    const result = updateMovieSchema.safeParse({ quality: 'VHS' });
+    const result = updateMovieSchema.safeParse({ quality: ['VHS'] });
     expect(result.success).toBe(false);
   });
 });

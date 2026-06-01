@@ -30,8 +30,7 @@ describe('Random Movie Page', () => {
         cy.contains('button', 'Search').click();
         cy.contains('The Matrix').should('be.visible');
 
-        // Select quality
-        cy.get('select').first().select('4K');
+        cy.get('input[type="checkbox"][value="4K"]').first().check();
 
         // Add to library
         cy.contains('button', 'Add to Library').first().click();

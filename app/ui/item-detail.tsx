@@ -14,7 +14,9 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
     const [isPending, startTransition] = useTransition();
     const [movie, setMovie] = useState<SerializedMovie>(initialMovie);
     const [isEditing, setIsEditing] = useState(false);
-    const [editQuality, setEditQuality] = useState<Quality>(movie.quality as Quality);
+    const [editQuality, setEditQuality] = useState<Quality[]>(
+        Array.isArray(movie.quality) ? movie.quality : [movie.quality as Quality]
+    );
     const [editNotes, setEditNotes] = useState(movie.customNotes || '');
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -81,7 +83,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
     };
 
     const handleCancelEdit = () => {
-        setEditQuality(movie.quality as Quality);
+        setEditQuality(Array.isArray(movie.quality) ? movie.quality : [movie.quality as Quality]);
         setEditNotes(movie.customNotes || '');
         setIsEditing(false);
     };
@@ -167,15 +169,29 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                             <h3 className="text-sm font-semibold mb-3 text-[var(--accent-light)]">Edit Metadata</h3>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1 text-[var(--foreground-muted)]">Quality</label>
-                                <select
-                                    value={editQuality}
-                                    onChange={(e) => setEditQuality(e.target.value as Quality)}
-                                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--background-input)] border-[var(--border)] text-[var(--foreground)]"
-                                >
+                                <div className="flex flex-wrap gap-3">
                                     {QUALITIES.map((q) => (
-                                        <option key={q} value={q}>{q}</option>
+                                        <label key={q} className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                value={q}
+                                                checked={editQuality.includes(q)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setEditQuality([...editQuality, q]);
+                                                    } else {
+                                                        setEditQuality(editQuality.filter((v) => v !== q));
+                                                    }
+                                                }}
+                                                className="accent-indigo-500 w-4 h-4"
+                                            />
+                                            <span className="text-sm">{q}</span>
+                                        </label>
                                     ))}
-                                </select>
+                                </div>
+                                {editQuality.length === 0 && (
+                                    <p className="text-xs text-red-400 mt-1">Please select at least one quality format.</p>
+                                )}
                             </div>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1 text-[var(--foreground-muted)]">Notes</label>
@@ -204,8 +220,10 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                             </div>
                         </div>
                     ) : (
-                        <div className="mt-2 text-sm font-medium">
-                            <span className="item-badge item-badge--quality">{movie.quality}</span>
+                        <div className="mt-2 text-sm font-medium flex flex-wrap gap-1">
+                            {(Array.isArray(movie.quality) ? movie.quality : [movie.quality]).map((q) => (
+                                <span key={q} className="item-badge item-badge--quality">{q}</span>
+                            ))}
                         </div>
                     )}
 

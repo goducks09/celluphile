@@ -9,7 +9,7 @@ import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
 export default function WishlistList({ initialMovies }: { initialMovies: SerializedWishlistMovie[] }) {
     const [movies, setMovies] = useState<SerializedWishlistMovie[]>(initialMovies);
-    const [selectedQualities, setSelectedQualities] = useState<Record<number, string>>({});
+    const [selectedQualities, setSelectedQualities] = useState<Record<number, Quality[]>>({});
     
     // Sort options: Date Added (default, newest first), Release Year, Title
     const [sortBy, setSortBy] = useState<'addedAt' | 'releaseDate' | 'title'>('addedAt');
@@ -41,8 +41,8 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
 
     const handleMoveToLibrary = (movie: SerializedWishlistMovie) => {
         const quality = selectedQualities[movie.tmdbId];
-        if (!quality) {
-            toast.warning(`Please select a quality to move ${movie.title} to your library.`);
+        if (!quality || quality.length === 0) {
+            toast.warning(`Please select at least one quality to move ${movie.title} to your library.`);
             return;
         }
 
@@ -54,7 +54,7 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
             try {
                 const result = await addMovieToLibrary({
                     tmdbId: movie.tmdbId,
-                    quality: quality as Quality,
+                    quality: quality as Quality[],
                 });
 
                 if (result.success) {
@@ -145,17 +145,32 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
                             </div>
                             
                             <div className="flex flex-col gap-2 mt-auto">
-                                <select
-                                    value={selectedQualities[movie.tmdbId] || ''}
-                                    onChange={(e) => setSelectedQualities({ ...selectedQualities, [movie.tmdbId]: e.target.value })}
-                                    className="p-1 border rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                    style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-                                >
-                                    <option value="" disabled>Select Quality</option>
-                                    {QUALITIES.map((q) => (
-                                        <option key={q} value={q}>{q}</option>
-                                    ))}
-                                </select>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs" style={{ color: 'var(--foreground-muted)' }}>Format:</span>
+                                    <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                        {QUALITIES.map((q) => {
+                                            const current = selectedQualities[movie.tmdbId] || [];
+                                            return (
+                                                <label key={q} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={q}
+                                                        checked={current.includes(q)}
+                                                        onChange={(e) => {
+                                                            const prev = selectedQualities[movie.tmdbId] || [];
+                                                            const next = e.target.checked
+                                                                ? [...prev, q]
+                                                                : prev.filter((v) => v !== q);
+                                                            setSelectedQualities({ ...selectedQualities, [movie.tmdbId]: next });
+                                                        }}
+                                                        className="accent-indigo-500 w-3 h-3"
+                                                    />
+                                                    {q}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                                 <button
                                     onClick={() => handleMoveToLibrary(movie)}
                                     className="w-full px-2 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center justify-center gap-1"

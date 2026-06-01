@@ -20,7 +20,7 @@ export const personSchema = z.object({
 
 export const addMovieSchema = z.object({
     tmdbId: z.number().int().positive(),
-    quality: qualityEnum,
+    quality: z.array(qualityEnum).min(1, 'At least one quality format must be selected.'),
     customNotes: z.string().max(500, 'Custom notes cannot exceed 500 characters').optional(),
 });
 
@@ -71,7 +71,7 @@ export const searchPaginationSchema = z.object({
 }).default({ page: 1, limit: 20 });
 
 export const updateMovieSchema = z.object({
-    quality: qualityEnum.optional(),
+    quality: z.array(qualityEnum).min(1, 'At least one quality format must be selected.').optional(),
     customNotes: z.string().optional(),
 }).refine(
     (data) => Object.keys(data).length > 0,

@@ -33,7 +33,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains(searchTerm).should('be.visible');
 
     // Select quality for the first result and add
-    cy.get('select').first().select('Blu-ray');
+    cy.get('input[type="checkbox"][value="Blu-ray"]').first().check();
     cy.contains('button', 'Add to Library').first().click();
 
     // Success toast should appear
@@ -53,7 +53,7 @@ describe('E2E-3: Movie Library CRUD', () => {
         cy.contains('button', 'Add to Library').click();
       });
 
-    cy.contains('Please select a quality format', { timeout: 10000 }).should('exist');
+    cy.contains('Please select at least one quality format', { timeout: 10000 }).should('exist');
   });
 
   // E2E-3.4: Add duplicate movie
@@ -65,7 +65,7 @@ describe('E2E-3: Movie Library CRUD', () => {
   //   cy.contains(searchTerm).should('be.visible');
 
   //   // Inception was already added in E2E-3.2, so this should fail
-  //   cy.get('select').first().select('DVD');
+  //   cy.get('input[type="checkbox"][value="DVD"]').first().check();
   //   cy.contains('button', 'Add to Library').first().click();
 
   //   // Use 'exist' instead of 'be.visible' — Sonner toasts animate in from opacity: 0
@@ -103,7 +103,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.contains('h3', 'The Matrix')
       .closest('div.flex.items-center.justify-between')
       .within(() => {
-        cy.get('select').select('DVD');
+        cy.get('input[type="checkbox"][value="DVD"]').check();
         cy.contains('button', 'Add to Library').click();
       });
     cy.contains('added to library', { matchCase: false, timeout: 10000 }).should('exist');

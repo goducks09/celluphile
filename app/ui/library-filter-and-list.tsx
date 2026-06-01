@@ -41,7 +41,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     // Offline Read: Query Dexie local cache
                     let localQuery = db.movies.orderBy('addedAt').reverse();
                     if (selectedQuality) {
-                        localQuery = localQuery.filter(m => m.quality === selectedQuality);
+                        localQuery = localQuery.filter(m => m.quality.includes(selectedQuality));
                     }
                     if (query && query.trim() !== '') {
                         const lowerQuery = query.toLowerCase();
@@ -227,7 +227,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                         </p>
                                     )}
                                     <div className="flex justify-between items-center text-sm mb-2" style={{ color: 'var(--foreground-muted)' }}>
-                                        <span className="px-2 py-1 rounded" style={{ background: 'var(--background-input)' }}>{movie.quality}</span>
+                                        <span className="px-2 py-1 rounded" style={{ background: 'var(--background-input)' }}>{Array.isArray(movie.quality) ? movie.quality.join(' + ') : movie.quality}</span>
                                     </div>
                                 </div>
                                 <div className="text-xs mt-4 flex justify-between items-center" style={{ color: 'var(--foreground-muted)' }}>

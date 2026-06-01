@@ -5,7 +5,7 @@ import { QUALITIES, type Quality } from '@/app/lib/schemas';
 export interface IUserMovie {
   userId: Types.ObjectId;
   tmdbId: number;
-  quality: Quality;
+  quality: Quality[];
   addedAt: Date;
   customNotes?: string;
 }
@@ -15,7 +15,7 @@ export type IUserMovieDocument = HydratedDocument<IUserMovie>;
 const UserMovieSchema = new Schema<IUserMovie>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   tmdbId: { type: Number, required: true },
-  quality: { type: String, enum: QUALITIES, required: true },
+  quality: { type: [String], enum: QUALITIES, required: true, validate: [(v: string[]) => v.length > 0, 'At least one quality format is required.'] },
   addedAt: { type: Date, default: Date.now },
   customNotes: { type: String, trim: true, maxlength: 500 },
 });

@@ -55,7 +55,7 @@ const mockMovie: SerializedMovie = {
     title: 'Test Movie',
     poster: '/test.jpg',
     genres: ['Action'],
-    quality: 'Blu-ray',
+    quality: ['Blu-ray'],
     addedAt: '2024-01-01T00:00:00.000Z',
     actors: [{ firstName: 'John', lastName: 'Doe', fullName: 'John Doe' }],
     directors: [{ firstName: 'Jane', lastName: 'Smith', fullName: 'Jane Smith' }],
@@ -148,7 +148,7 @@ describe('ItemDetail Component', () => {
         await waitFor(() => {
             expect(updateMovieInLibrary).toHaveBeenCalledWith(100, expect.objectContaining({
                 customNotes: 'Great movie!',
-                quality: 'Blu-ray'
+                quality: ['Blu-ray']
             }));
         });
 
@@ -164,9 +164,8 @@ describe('ItemDetail Component', () => {
 
         await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
 
-        // Change quality to 4K
-        const qualitySelect = screen.getByDisplayValue('Blu-ray');
-        await user.selectOptions(qualitySelect, '4K');
+        // Check '4K' checkbox (Blu-ray is already checked)
+        await user.click(screen.getByRole('checkbox', { name: /4k/i }));
 
         await user.click(screen.getByRole('button', { name: /Save Changes/i }));
 
@@ -217,9 +216,8 @@ describe('ItemDetail Component', () => {
         await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
         expect(screen.getByPlaceholderText('Add custom notes...')).toBeInTheDocument();
 
-        // Change quality
-        const qualitySelect = screen.getByDisplayValue('Blu-ray');
-        await user.selectOptions(qualitySelect, '4K');
+        // Check 4K checkbox to change quality
+        await user.click(screen.getByRole('checkbox', { name: /4k/i }));
 
         // Cancel
         await user.click(screen.getByRole('button', { name: /Cancel/i }));
