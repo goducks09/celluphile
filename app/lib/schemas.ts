@@ -61,7 +61,7 @@ export const notificationPayloadSchema = z.object({
 export const searchQuerySchema = z.string().max(200);
 
 export const searchSortSchema = z.object({
-    field: z.enum(['title', 'addedAt', 'release_date']),
+    field: z.enum(['title', 'addedAt', 'release_date', 'genre']),
     order: z.union([z.literal(1), z.literal(-1)]),
 }).optional();
 

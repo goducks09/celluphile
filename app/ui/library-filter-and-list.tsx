@@ -8,8 +8,16 @@ import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 import { toast } from 'sonner';
+import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 // We use SerializedMovie for all client state
+
+const SORT_OPTIONS = [
+  { label: 'Title',                 value: 'title',        defaultOrder: 1  },
+  { label: 'Date Added to Library', value: 'addedAt',      defaultOrder: -1 },
+  { label: 'Genre',                 value: 'genre',        defaultOrder: 1  },
+  { label: 'Release Year',         value: 'release_date', defaultOrder: -1 },
+] as const;
 
 export default function LibraryFilterAndList({ initialMovies, initialHasMore }: { initialMovies: SerializedMovie[], initialHasMore?: boolean }) {
     const [movies, setMovies] = useState<SerializedMovie[]>(initialMovies);
@@ -20,6 +28,14 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
     const [hasMore, setHasMore] = useState(initialHasMore ?? false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [sortField, setSortField] = useState<string>('title');
+    const [sortOrder, setSortOrder] = useState<1 | -1>(1);
+
+    const handleSortFieldChange = (newField: string) => {
+        setSortField(newField);
+        const opt = SORT_OPTIONS.find(o => o.value === newField)!;
+        setSortOrder(opt.defaultOrder as 1 | -1);
+    };
 
     useEffect(() => {
         setIsMounted(true);
@@ -48,6 +64,30 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                         localQuery = localQuery.filter(m => m.title.toLowerCase().includes(lowerQuery));
                     }
                     const localMovies = await localQuery.toArray();
+                    localMovies.sort((a, b) => {
+                        let result: number;
+                        switch (sortField) {
+                            case 'title':
+                                result = sortOrder * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                                break;
+                            case 'addedAt':
+                                result = sortOrder * (new Date(a.addedAt).getTime() - new Date(b.addedAt).getTime());
+                                break;
+                            case 'genre':
+                                result = sortOrder * (a.genres?.[0] || '').localeCompare(b.genres?.[0] || '', undefined, { sensitivity: 'base' });
+                                break;
+                            case 'release_date':
+                                result = sortOrder * ((a.releaseDate || '').localeCompare(b.releaseDate || ''));
+                                break;
+                            default:
+                                result = 0;
+                        }
+                        // Tie-breaker: fall back to title for deterministic ordering
+                        if (result === 0 && sortField !== 'title') {
+                            result = a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                        }
+                        return result;
+                    });
                     setMovies(localMovies.map(m => ({
                         ...m,
                         _id: '',
@@ -61,10 +101,11 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
 
                 // Online Read: Query Server
                 const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+                const sortOpts = { field: sortField, order: sortOrder };
                 const res = await fetch('/api/library/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query, filters, pagination: { page: 1, limit: 20 } })
+                    body: JSON.stringify({ query, filters, sortOpts, pagination: { page: 1, limit: 20 } })
                 });
                 const result = await res.json();
 
@@ -99,7 +140,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timeoutId);
-    }, [query, selectedQuality]);
+    }, [query, selectedQuality, sortField, sortOrder]);
 
     const loadMore = useCallback(async () => {
         if (loadingMore || !hasMore || loading) return;
@@ -111,10 +152,11 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
             }
             const nextPage = page + 1;
             const filters = selectedQuality ? { quality: [selectedQuality] } : {};
+            const sortOpts = { field: sortField, order: sortOrder };
             const res = await fetch('/api/library/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, filters, pagination: { page: nextPage, limit: 20 } })
+                body: JSON.stringify({ query, filters, sortOpts, pagination: { page: nextPage, limit: 20 } })
             });
             const result = await res.json();
 
@@ -131,7 +173,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
         } finally {
             setLoadingMore(false);
         }
-    }, [page, hasMore, loadingMore, loading, query, selectedQuality]);
+    }, [page, hasMore, loadingMore, loading, query, selectedQuality, sortField, sortOrder]);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -170,12 +212,35 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     onChange={(e) => setSelectedQuality(e.target.value as Quality | '')}
                     className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                    aria-label="Filter by quality"
                 >
                     <option value="">All Qualities</option>
                     {QUALITIES.map((q) => (
                         <option key={q} value={q}>{q}</option>
                     ))}
                 </select>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={sortField}
+                        onChange={(e) => handleSortFieldChange(e.target.value)}
+                        className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                        aria-label="Sort library"
+                    >
+                        {SORT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    <button
+                        onClick={() => setSortOrder(prev => prev === 1 ? -1 : 1)}
+                        className="p-2 border rounded hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                        style={{ background: 'var(--background-input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                        aria-label={sortOrder === 1 ? 'Sort ascending' : 'Sort descending'}
+                        title={sortOrder === 1 ? 'Ascending' : 'Descending'}
+                    >
+                        {sortOrder === 1 ? <ArrowUpIcon className="w-5 h-5" /> : <ArrowDownIcon className="w-5 h-5" />}
+                    </button>
+                </div>
             </div>
 
             {/* Loading State Overlay */}

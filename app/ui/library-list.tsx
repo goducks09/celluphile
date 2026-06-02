@@ -11,7 +11,7 @@ export default async function LibraryList() {
         return <div className="text-center p-8 mt-4 rounded shadow" style={{ background: 'var(--background-card)', color: 'var(--foreground-muted)' }}>Please log in to view your library.</div>;
     }
 
-    // Fetch initial movies (sorted by newest, max 20) via server action logic directly
+    // Fetch initial movies (sorted by title, max 20) via server action logic directly
     const result = await searchUserLibrary('', undefined, undefined, { page: 1, limit: 20 });
 
     if (!result.success) {

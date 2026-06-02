@@ -63,6 +63,12 @@ jest.mock('next/image', () => ({
   },
 }));
 
+// Mock heroicons
+jest.mock('@heroicons/react/24/outline', () => ({
+  ArrowUpIcon: () => <svg data-testid="ArrowUpIcon" />,
+  ArrowDownIcon: () => <svg data-testid="ArrowDownIcon" />,
+}));
+
 // Mock IntersectionObserver
 const mockObserve = jest.fn();
 const mockDisconnect = jest.fn();
@@ -167,6 +173,7 @@ describe('LibraryFilterAndList', () => {
           body: JSON.stringify({
             query: '',
             filters: { quality: ['Blu-ray'] },
+            sortOpts: { field: 'title', order: 1 },
             pagination: { page: 1, limit: 20 },
           }),
         })
@@ -216,6 +223,7 @@ describe('LibraryFilterAndList', () => {
           body: JSON.stringify({
             query: 'Fig',
             filters: {},
+            sortOpts: { field: 'title', order: 1 },
             pagination: { page: 1, limit: 20 },
           }),
         })
@@ -239,5 +247,101 @@ describe('LibraryFilterAndList', () => {
     });
 
     expect(screen.getByText('No Poster Available')).toBeInTheDocument();
+  });
+
+  it('renders the sort dropdown with 4 options and asc toggle by default', async () => {
+    await act(async () => {
+      render(<LibraryFilterAndList initialMovies={[]} />);
+    });
+    
+    expect(screen.getByDisplayValue('Title')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Title' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Date Added to Library' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Genre' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Release Year' })).toBeInTheDocument();
+    
+    // Default order should be 1 (ArrowUpIcon)
+    expect(screen.getByTestId('ArrowUpIcon')).toBeInTheDocument();
+  });
+
+  it('changing sort field triggers a new fetch with default direction', async () => {
+    await act(async () => {
+      render(<LibraryFilterAndList initialMovies={[]} />);
+    });
+
+    const sortSelect = screen.getByDisplayValue('Title');
+    await act(async () => {
+      fireEvent.change(sortSelect, { target: { value: 'release_date' } });
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/library/search',
+        expect.objectContaining({
+          body: JSON.stringify({
+            query: '',
+            filters: {},
+            sortOpts: { field: 'release_date', order: -1 },
+            pagination: { page: 1, limit: 20 },
+          }),
+        })
+      );
+    });
+  });
+
+  it('toggling direction triggers a new fetch', async () => {
+    await act(async () => {
+      render(<LibraryFilterAndList initialMovies={[]} />);
+    });
+
+    const toggleBtn = screen.getByRole('button', { name: /Sort/i });
+    await act(async () => {
+      fireEvent.click(toggleBtn);
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/library/search',
+        expect.objectContaining({
+          body: JSON.stringify({
+            query: '',
+            filters: {},
+            sortOpts: { field: 'title', order: -1 },
+            pagination: { page: 1, limit: 20 },
+          }),
+        })
+      );
+    });
+  });
+
+  it('changing sort field resets direction to default', async () => {
+    await act(async () => {
+      render(<LibraryFilterAndList initialMovies={[]} />);
+    });
+
+    const toggleBtn = screen.getByRole('button', { name: /Sort/i });
+    const sortSelect = screen.getByDisplayValue('Title');
+    
+    // Change title to descending
+    await act(async () => {
+      fireEvent.click(toggleBtn);
+    });
+    
+    expect(screen.getByTestId('ArrowDownIcon')).toBeInTheDocument();
+
+    // Switch to Genre (default 1)
+    await act(async () => {
+      fireEvent.change(sortSelect, { target: { value: 'genre' } });
+    });
+
+    expect(screen.getByTestId('ArrowUpIcon')).toBeInTheDocument();
   });
 });

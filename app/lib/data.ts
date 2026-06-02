@@ -251,13 +251,17 @@ export async function searchUserLibrary(
 
             let sortConfig: any = {};
             if (safeSortOpts) {
-                if (safeSortOpts.field === 'title' || safeSortOpts.field === 'release_date') {
-                    sortConfig = { [`movieDetails.${safeSortOpts.field}`]: safeSortOpts.order };
+                if (safeSortOpts.field === 'title') {
+                    sortConfig = { 'movieDetails.title': safeSortOpts.order };
+                } else if (safeSortOpts.field === 'release_date') {
+                    sortConfig = { 'movieDetails.releaseDate': safeSortOpts.order, 'movieDetails.title': 1 };
                 } else if (safeSortOpts.field === 'addedAt') {
-                    sortConfig = { addedAt: safeSortOpts.order };
+                    sortConfig = { addedAt: safeSortOpts.order, 'movieDetails.title': 1 };
+                } else if (safeSortOpts.field === 'genre') {
+                    sortConfig = { 'movieDetails.genres.0': safeSortOpts.order, 'movieDetails.title': 1 };
                 }
             } else {
-                sortConfig = { addedAt: -1 };
+                sortConfig = { 'movieDetails.title': 1 };
             }
             pipeline.push({ $sort: sortConfig });
         }
@@ -267,8 +271,8 @@ export async function searchUserLibrary(
         pipeline.push({ $limit: limit + 1 });
 
         const rawResult = safeQuery && safeQuery.trim() !== ''
-            ? await Movie.aggregate(pipeline)
-            : await UserMovie.aggregate(pipeline);
+            ? await Movie.aggregate(pipeline).collation({ locale: 'en' })
+            : await UserMovie.aggregate(pipeline).collation({ locale: 'en' });
 
         const hasMore = rawResult.length > limit;
         const pageMovies = hasMore ? rawResult.slice(0, limit) : rawResult;

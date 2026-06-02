@@ -112,7 +112,7 @@ describe('E2E-3: Movie Library CRUD', () => {
     cy.visit('/library');
 
     // Select "Blu-ray" quality filter (Inception is Blu-ray from E2E-3.2)
-    cy.get('select').last().select('Blu-ray');
+    cy.get('select[aria-label="Filter by quality"]').select('Blu-ray');
 
     // Blu-ray movie should be visible, DVD movie should be hidden
     cy.contains(searchTerm).should('be.visible');
