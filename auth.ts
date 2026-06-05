@@ -62,9 +62,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     // This callback is used to customize the JWT token
+    // On sign-in (user is present), store the user ID and a timestamp.
+    // On subsequent requests, periodically verify the user still exists in the DB
+    // to invalidate sessions for deleted users.
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.lastVerified = Date.now();
+      } else if (token.id) {
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        const lastVerified = (token.lastVerified as number) || 0;
+
+        if (Date.now() - lastVerified > FIVE_MINUTES) {
+          await dbConnect();
+          const existingUser = await User.findById(token.id).select('_id').lean();
+          if (!existingUser) {
+            // User has been deleted — invalidate the session
+            return {};
+          }
+          token.lastVerified = Date.now();
+        }
       }
       return token;
     },
@@ -76,7 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
+      const isLoggedIn = !!auth?.user?.id;
       const protectedPaths = ['/dashboard', '/library', '/random', '/recommendations', '/settings', '/wishlist'];
       const isProtected = protectedPaths.some(p => nextUrl.pathname.startsWith(p));
       if (isProtected) {
