@@ -1,54 +1,91 @@
-import { Schema, model, models, Document, Types } from 'mongoose';
+import 'server-only';
+import { Schema, model, models, type HydratedDocument } from 'mongoose';
 
-export interface IMovie extends Document {
-  userId: Types.ObjectId;
-  tmdbId: number;
-  title: string;
-  poster: string;
-  genre: string[];
-  quality: 'Digital' | 'Blu-ray' | '4K' | 'DVD';
-  addedAt: Date;
-  customNotes?: string;
+export interface IActor {
+  firstName: string;
+  lastName: string;
+  fullName: string;
 }
 
+export interface IDirector {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+}
+
+export interface IMovie {
+  tmdbId: number;
+  actors: IActor[];
+  directors: IDirector[];
+  embedding?: number[];
+  genres: string[];
+  keywords: string[];
+  lastFetched: Date;
+  overview: string;
+  popularity?: number;
+  poster: string;
+  releaseDate?: string;
+  runtime?: number;
+  title: string;
+  voteAverage?: number;
+  voteCount?: number;
+}
+
+export type IMovieDocument = HydratedDocument<IMovie>;
+
 const MovieSchema = new Schema<IMovie>({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
   tmdbId: {
     type: Number,
     required: true,
+    unique: true,
   },
-  title: {
-    type: String,
-    required: true,
+  actors: {
+    type: [{ firstName: String, lastName: String, fullName: String, _id: false }],
+    default: [],
   },
-  poster: {
-    type: String,
-    required: true,
+  directors: {
+    type: [{ firstName: String, lastName: String, fullName: String, _id: false }],
+    default: [],
   },
-  genre: {
+  embedding: {
+    type: [Number],
+    default: null,
+  },
+  genres: {
     type: [String],
-    required: true,
+    default: [],
   },
-  quality: {
-    type: String,
-    enum: ['Digital', 'Blu-ray', '4K', 'DVD'],
-    required: true,
+  keywords: {
+    type: [String],
+    default: [],
   },
-  addedAt: {
+  lastFetched: {
     type: Date,
     default: Date.now,
   },
-  customNotes: {
+  overview: {
     type: String,
+    default: '',
   },
+  popularity: { type: Number },
+  poster: {
+    type: String,
+    default: '',
+  },
+  releaseDate: { type: String },
+  runtime: { type: Number },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 255,
+  },
+  voteAverage: { type: Number },
+  voteCount: { type: Number },
 });
 
-// Ensures a user cannot add the same movie to their library twice
-MovieSchema.index({ userId: 1, tmdbId: 1 }, { unique: true });
+// Add text indexing for efficient local library search by title
+MovieSchema.index({ title: 'text' });
 
 const Movie = models.Movie || model<IMovie>('Movie', MovieSchema);
 

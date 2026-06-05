@@ -1,0 +1,45 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`MoviesSkeleton snapshot test 1`] = `
+<div>
+  <div
+    aria-busy="true"
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-6"
+    role="status"
+  >
+    <div
+      aria-label="Loading"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
+      role="status"
+      style="background: var(--background-card);"
+    >
+      <div
+        class="absolute inset-0"
+        style="background: var(--background-input);"
+      />
+    </div>
+    <div
+      aria-label="Loading"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
+      role="status"
+      style="background: var(--background-card);"
+    >
+      <div
+        class="absolute inset-0"
+        style="background: var(--background-input);"
+      />
+    </div>
+    <div
+      aria-label="Loading"
+      class="relative group rounded overflow-hidden shadow-sm animate-pulse aspect-[2/3]"
+      role="status"
+      style="background: var(--background-card);"
+    >
+      <div
+        class="absolute inset-0"
+        style="background: var(--background-input);"
+      />
+    </div>
+  </div>
+</div>
+`;

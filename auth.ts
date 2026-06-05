@@ -3,30 +3,48 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import client from '@/app/lib/db';
 import Credentials from 'next-auth/providers/credentials';
 import User from '@/app/models/user';
-import dbConnect from '@/app/lib/db';
+import dbConnect from '@/app/lib/mongoose';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(client),
   session: { strategy: 'jwt' },
+  logger: {
+    error(error) {
+      if (error?.name === 'CredentialsSignin' || String(error?.message || '').includes('CredentialsSignin')) {
+        return;
+      }
+      console.error('[auth][error]', error);
+    },
+    warn(code) {
+      console.warn('[auth][warn]', code);
+    },
+    debug(code, metadata) {
+      console.debug('[auth][debug]', code, metadata);
+    },
+  },
   providers: [
     Credentials({
       name: 'Credentials',
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-            return null;
-        }
+        const emailSchema = z.string().email();
+        const passwordSchema = z.string().min(1);
+
+        const email = emailSchema.safeParse(credentials?.email);
+        const password = passwordSchema.safeParse(credentials?.password);
+        if (!email.success || !password.success) return null;
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: email.data });
 
         if (!user || !user.password) {
           return null;
         }
 
         const isPasswordCorrect = await bcrypt.compare(
-          credentials.password as string,
+          password.data,
           user.password
         );
 
@@ -44,23 +62,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     // This callback is used to customize the JWT token
+    // On sign-in (user is present), store the user ID and a timestamp.
+    // On subsequent requests, periodically verify the user still exists in the DB
+    // to invalidate sessions for deleted users.
     async jwt({ token, user }) {
-        if (user) {
-            token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.lastVerified = Date.now();
+      } else if (token.id) {
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        const lastVerified = (token.lastVerified as number) || 0;
+
+        if (Date.now() - lastVerified > FIVE_MINUTES) {
+          await dbConnect();
+          const existingUser = await User.findById(token.id).select('_id').lean();
+          if (!existingUser) {
+            // User has been deleted — invalidate the session
+            return {};
+          }
+          token.lastVerified = Date.now();
         }
-        return token;
+      }
+      return token;
     },
     // This callback is used to customize the session object
     async session({ session, token }) {
-        if (session.user) {
-            session.user.id = token.id as string;
-        }
-        return session;
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
     },
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      if (isOnDashboard) {
+      const isLoggedIn = !!auth?.user?.id;
+      const protectedPaths = ['/dashboard', '/library', '/random', '/recommendations', '/settings', '/wishlist'];
+      const isProtected = protectedPaths.some(p => nextUrl.pathname.startsWith(p));
+      if (isProtected) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
       } else if (isLoggedIn) {
