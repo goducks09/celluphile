@@ -16,6 +16,8 @@ function SearchResults({
     handleWishlistToggle,
     selectedQualities,
     setSelectedQualities,
+    customNotes,
+    setCustomNotes,
     handleAddMovie
 }: {
     searchPromise: Promise<TMDBSearchResponse>;
@@ -24,6 +26,8 @@ function SearchResults({
     handleWishlistToggle: (movie: TMDBMovie) => void;
     selectedQualities: Record<number, Quality[]>;
     setSelectedQualities: (val: Record<number, Quality[]>) => void;
+    customNotes: Record<number, string>;
+    setCustomNotes: (val: Record<number, string>) => void;
     handleAddMovie: (movie: TMDBMovie) => void;
 }) {
     const data = use(searchPromise);
@@ -89,9 +93,20 @@ function SearchResults({
                                             );
                                         })}
                                     </div>
+                                    <div className="w-full mt-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Optional notes..."
+                                            value={customNotes[movie.id] || ''}
+                                            onChange={(e) => setCustomNotes({ ...customNotes, [movie.id]: e.target.value })}
+                                            className="w-full p-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-transparent"
+                                            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                                            maxLength={500}
+                                        />
+                                    </div>
                                     <button
                                         onClick={() => handleAddMovie(movie)}
-                                        className="mt-1 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                                        className="mt-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 w-full"
                                     >
                                         Add to Library
                                     </button>
@@ -120,6 +135,7 @@ export default function SearchAddMovie({
     const [query, setQuery] = useState(initialQuery);
     const [isPending, startTransition] = useTransition();
     const [selectedQualities, setSelectedQualities] = useState<Record<number, Quality[]>>({});
+    const [customNotes, setCustomNotes] = useState<Record<number, string>>({});
     
     const [libraryIds, setLibraryIds] = useState<Set<number>>(new Set(initialLibraryIds));
     const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set(initialWishlistIds));
@@ -244,6 +260,7 @@ export default function SearchAddMovie({
             }
 
             const { actors, directors } = extractCredits(details);
+            const notes = customNotes[movie.id] || '';
 
             const payload = {
                 tmdbId: movie.id,
@@ -251,6 +268,7 @@ export default function SearchAddMovie({
                 poster: movie.poster_path || '',
                 genres: details.genres.map((g: any) => g.name),
                 quality: quality as Quality[],
+                customNotes: notes,
                 actors,
                 directors,
                 releaseDate: details.release_date || undefined,
@@ -269,6 +287,7 @@ export default function SearchAddMovie({
                     
                     toast.success(`${movie.title} added offline. Will sync when connected.`, { id: loadingToastId });
                     setSelectedQualities((prev) => { const updated = { ...prev }; delete updated[movie.id]; return updated; });
+                    setCustomNotes((prev) => { const updated = { ...prev }; delete updated[movie.id]; return updated; });
                     setLibraryIds(prev => new Set(prev).add(movie.id));
                     setWishlistIds(prev => { const next = new Set(prev); next.delete(movie.id); return next; });
                 } catch (err) {
@@ -282,6 +301,7 @@ export default function SearchAddMovie({
                 if (result.success) {
                     toast.success(result.message || 'Movie added to library!', { id: loadingToastId });
                     setSelectedQualities((prev) => { const updated = { ...prev }; delete updated[movie.id]; return updated; });
+                    setCustomNotes((prev) => { const updated = { ...prev }; delete updated[movie.id]; return updated; });
                     setLibraryIds(prev => new Set(prev).add(movie.id));
                     setWishlistIds(prev => { const next = new Set(prev); next.delete(movie.id); return next; });
                 } else {
@@ -324,6 +344,8 @@ export default function SearchAddMovie({
                         handleWishlistToggle={handleWishlistToggle}
                         selectedQualities={selectedQualities}
                         setSelectedQualities={setSelectedQualities}
+                        customNotes={customNotes}
+                        setCustomNotes={setCustomNotes}
                         handleAddMovie={handleAddMovie}
                     />
                 </Suspense>

@@ -12,6 +12,7 @@ jest.mock('next/navigation', () => ({
 
 // Mock tmdb server actions
 const mockGetMovieDetails = jest.fn();
+const mockSearchMovies = jest.fn();
 jest.mock('@/app/lib/tmdb', () => ({
   searchMovies: (...args: any[]) => mockSearchMovies(...args),
   getMovieDetails: (...args: any[]) => mockGetMovieDetails(...args),
@@ -224,6 +225,60 @@ describe('SearchAddMovie', () => {
           tmdbId: 550,
           title: 'Fight Club',
           quality: ['Blu-ray'],
+        })
+      );
+    });
+  });
+
+  it('passes customNotes as empty string when user has not typed any notes', async () => {
+    const user = userEvent.setup();
+    const searchPromise = createResolvedPromise({
+      results: [sampleMovie],
+      total_results: 1,
+    });
+    mockAddMovieToLibrary.mockResolvedValue({
+      success: true,
+      message: 'Movie added to library!',
+    });
+
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 550,
+          title: 'Fight Club',
+          overview: 'An insomniac...',
+          poster_path: '/poster.jpg',
+          release_date: '1999-10-15',
+          genre_ids: [18, 53],
+          vote_average: 8.4,
+          genres: [{ id: 18, name: 'Drama' }, { id: 53, name: 'Thriller' }],
+          runtime: 139,
+          status: 'Released',
+          tagline: '',
+        }),
+      })
+    );
+
+    render(<SearchAddMovie searchPromise={searchPromise} initialQuery="Fight Club" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Fight Club')).toBeInTheDocument();
+    });
+
+    // Select quality (check 'Blu-ray' checkbox)
+    await user.click(screen.getByRole('checkbox', { name: /blu-ray/i }));
+
+    // Add to library without typing in the custom notes input
+    await user.click(screen.getByRole('button', { name: /add to library/i }));
+
+    await waitFor(() => {
+      expect(mockAddMovieToLibrary).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tmdbId: 550,
+          title: 'Fight Club',
+          quality: ['Blu-ray'],
+          customNotes: '',
         })
       );
     });
