@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { SerializedMovie, LibraryStats } from '@/app/lib/data';
-import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { QUALITY_COLORS } from '@/app/ui/constants';
 
 export default function HomeDashboard({
@@ -14,16 +12,6 @@ export default function HomeDashboard({
     recentMovies: SerializedMovie[];
     stats: LibraryStats;
 }) {
-    const [activeFilter, setActiveFilter] = useState<Quality | ''>('');
-
-    const filteredMovies = activeFilter
-        ? recentMovies.filter((m) => m.quality.includes(activeFilter))
-        : recentMovies;
-
-    const filters: { label: string; value: Quality | '' }[] = [
-        { label: 'All', value: '' },
-        ...QUALITIES.map((q) => ({ label: q, value: q })),
-    ];
 
     return (
         <div className="home-dashboard">
@@ -75,33 +63,21 @@ export default function HomeDashboard({
                 </div>
             </section>
 
-            {/* ===== Right Column: Your Library ===== */}
+            {/* ===== Right Column: Recently Added ===== */}
             <section className="home-library-col">
-                {/* Header + Filter Tabs */}
+                {/* Header */}
                 <div className="home-library-header">
-                    <h2 className="home-section-title">Your Library</h2>
-
-                    <div className="home-filter-tabs">
-                        {filters.map((f) => (
-                            <button
-                                key={f.value}
-                                onClick={() => setActiveFilter(f.value)}
-                                className={`home-filter-tab ${activeFilter === f.value ? 'home-filter-tab--active' : ''}`}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
+                    <h2 className="home-section-title">Recently Added</h2>
                 </div>
 
                 {/* Movie Grid */}
-                {filteredMovies.length === 0 ? (
+                {recentMovies.length === 0 ? (
                     <div className="home-library-empty">
-                        <p>No movies match this filter.</p>
+                        <p>Your library is empty.</p>
                     </div>
                 ) : (
                     <div className="home-movie-grid">
-                        {filteredMovies.map((movie, index) => (
+                        {recentMovies.map((movie, index) => (
                             <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="home-movie-card">
                                 {/* Quality Badges */}
                                 <span className={`home-quality-badge ${QUALITY_COLORS[movie.quality[0]] || 'bg-gray-500'}`}>

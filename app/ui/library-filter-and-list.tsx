@@ -258,7 +258,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     {movies.map((movie, index) => (
                         <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                             {movie.poster ? (
-                                <div className="relative w-full h-80">
+                                <div className="relative w-full aspect-[2/3]">
                                     <Image
                                         src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
                                         alt={`${movie.title} poster`}
@@ -269,7 +269,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                     />
                                 </div>
                             ) : (
-                                <div className="w-full h-80 flex items-center justify-center" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
+                                <div className="w-full aspect-[2/3] flex items-center justify-center" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
                                     No Poster Available
                                 </div>
                             )}

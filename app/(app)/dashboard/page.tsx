@@ -7,7 +7,7 @@ export default async function DashboardPage() {
 
   // Fetch the 8 most-recent movies and library stats in parallel
   const [libraryResult, statsResult] = await Promise.all([
-    searchUserLibrary('', undefined, undefined, { page: 1, limit: 8 }),
+    searchUserLibrary('', undefined, { field: 'addedAt', order: -1 }, { page: 1, limit: 8 }),
     getLibraryStats(),
   ]);
 

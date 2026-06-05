@@ -40,7 +40,7 @@ describe('E2E-5: Dashboard Page', () => {
     // Return to dashboard to see the server-rendered library
     cy.visit('/dashboard');
 
-    cy.contains('Your Library').should('be.visible');
+    cy.contains('Recently Added').should('be.visible');
     cy.contains('Inception').should('be.visible');
   });
 
