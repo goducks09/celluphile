@@ -12,6 +12,10 @@ jest.mock('next/headers', () => ({
   }),
 }));
 
+jest.mock('@vercel/firewall', () => ({
+  checkRateLimit: jest.fn().mockResolvedValue({ rateLimited: false }),
+}));
+
 // Save original fetch
 const originalFetch = global.fetch;
 let consoleSpy: jest.SpyInstance;
