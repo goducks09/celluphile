@@ -10,6 +10,20 @@ import { z } from 'zod';
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(client),
   session: { strategy: 'jwt' },
+  logger: {
+    error(error) {
+      if (error?.name === 'CredentialsSignin' || String(error?.message || '').includes('CredentialsSignin')) {
+        return;
+      }
+      console.error('[auth][error]', error);
+    },
+    warn(code) {
+      console.warn('[auth][warn]', code);
+    },
+    debug(code, metadata) {
+      console.debug('[auth][debug]', code, metadata);
+    },
+  },
   providers: [
     Credentials({
       name: 'Credentials',
