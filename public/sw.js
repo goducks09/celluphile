@@ -23,23 +23,46 @@ self.addEventListener('install', (event) => {
     // authenticated users away from it (307), so cache.add('/') would
     // fail on every install. Navigation fallback is handled by the
     // Network-First strategy in the fetch handler instead.
-    const shellAssets = [
-        '/offline',
-        '/manifest.webmanifest',
-        '/icon-192x192.png',
-        '/icon-512x512.png',
-    ];
-
     event.waitUntil(
-        caches.open(CACHES.shell).then((cache) =>
-            Promise.allSettled(
-                shellAssets.map((url) =>
+        caches.open(CACHES.shell).then(async (cache) => {
+            // Cache static shell assets
+            const staticAssets = [
+                '/manifest.webmanifest',
+                '/icon-192x192.png',
+                '/icon-512x512.png',
+            ];
+            await Promise.allSettled(
+                staticAssets.map((url) =>
                     cache.add(url).catch((err) => {
                         console.warn('[SW] Failed to pre-cache:', url, err);
                     })
                 )
-            )
-        )
+            );
+
+            // Fetch and cache the offline page plus its JS/CSS dependencies
+            try {
+                const offlineResponse = await fetch('/offline');
+                if (offlineResponse.ok) {
+                    const clone = offlineResponse.clone();
+                    const html = await offlineResponse.text();
+                    // Store the offline HTML response (preserving original headers)
+                    await cache.put(new Request('/offline'), clone);
+                    // Extract and cache referenced /_next/static/ assets only
+                    const assetUrls = [...html.matchAll(/\/_next\/static\/[^"'\s)]+/g)]
+                        .map((m) => m[0]);
+                    const uniqueAssets = [...new Set(assetUrls)];
+                    await Promise.allSettled(
+                        uniqueAssets.map((url) =>
+                            cache.add(url).catch((err) => {
+                                console.warn('[SW] Failed to pre-cache asset:', url, err);
+                            })
+                        )
+                    );
+                }
+            } catch (err) {
+                console.warn('[SW] Failed to pre-cache offline page:', err);
+            }
+        })
     );
     self.skipWaiting();
 });
@@ -117,16 +140,20 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             fetch(event.request)
                 .then((response) => {
-                    caches.open(CACHES.shell).then((cache) =>
-                        cache.put(event.request, response.clone())
-                    );
+                    // Only cache actual HTML pages, not redirect responses.
+                    // Caching 302/307 auth redirects would serve stale redirects
+                    // to logged-in users and cause redirect loops offline.
+                    if (response.status === 200) {
+                        caches.open(CACHES.shell).then((cache) =>
+                            cache.put(event.request, response.clone())
+                        );
+                    }
                     return response;
                 })
                 .catch(() =>
                     // Offline: try the specific route, then fall back to the
-                    // app shell root, then the dedicated offline page.
+                    // dedicated offline page.
                     caches.match(event.request)
-                        .then((r) => r || caches.match('/'))
                         .then((r) => r || caches.match('/offline'))
                 )
         );
