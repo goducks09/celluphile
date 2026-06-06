@@ -1,3 +1,5 @@
+'use client';
+
 export default function OfflineFallback() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen px-4" style={{ background: 'var(--background)' }}>
@@ -9,12 +11,12 @@ export default function OfflineFallback() {
                 <p className="mb-6" style={{ color: 'var(--foreground-muted)' }}>
                     We can&apos;t connect to the server right now. Some features may be unavailable until you reconnect to the internet.
                 </p>
-                <a
-                    href="/dashboard"
+                <button
+                    onClick={() => window.location.reload()}
                     className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm"
                 >
-                    Return to Library
-                </a>
+                    Try Again
+                </button>
             </div>
         </div>
     );

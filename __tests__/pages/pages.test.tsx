@@ -84,11 +84,11 @@ describe('Page Components', () => {
       expect(screen.getByText('You are currently offline')).toBeInTheDocument();
     });
 
-    it('contains link to /dashboard', async () => {
+    it('contains a button to try again', async () => {
       const OfflinePage = (await import('@/app/offline/page')).default;
       render(<OfflinePage />);
-      const dashboardLink = screen.getByRole('link', { name: /return to library/i });
-      expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+      const retryButton = screen.getByRole('button', { name: /try again/i });
+      expect(retryButton).toBeInTheDocument();
     });
   });
   describe('Random page', () => {
