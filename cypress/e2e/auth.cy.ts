@@ -14,14 +14,15 @@ describe('E2E-1: Authentication Flow', () => {
   });
 
   // E2E-1.1: Registration — happy path
-  it('registers a new user and redirects to /login', () => {
+  it('registers a new user and redirects to /dashboard with success toast', () => {
     const freshEmail = `test-auth-fresh-${Date.now()}@example.com`;
     cy.visit('/register');
     cy.get('#email').type(freshEmail);
     cy.get('#password').type(testPassword);
     cy.get('button[type="submit"]').click();
 
-    cy.url().should('include', '/login');
+    cy.url({ timeout: 10000 }).should('include', '/dashboard');
+    cy.contains('Account created!').should('be.visible');
   });
 
   // E2E-1.2: Registration — duplicate email

@@ -1,16 +1,38 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterForm from '@/app/ui/register-form';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
 
 // Mock next/navigation
-const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: jest.fn(),
+}));
+
+// Mock next-auth/react
+jest.mock('next-auth/react', () => ({
+  signIn: jest.fn(),
+}));
+
+// Mock sonner
+jest.mock('sonner', () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
 }));
 
 describe('RegisterForm', () => {
+  let mockPush: jest.Mock;
+  let mockRefresh: jest.Mock;
+
   beforeEach(() => {
     global.fetch = jest.fn();
+    jest.clearAllMocks();
+    mockPush = jest.fn();
+    mockRefresh = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({
+      push: mockPush,
+      refresh: mockRefresh,
+    });
   });
 
   it('renders email + password inputs and register button', () => {
@@ -36,12 +58,13 @@ describe('RegisterForm', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('successful registration redirects to /login', async () => {
+  it('successful registration signs in and redirects to /dashboard', async () => {
     const user = userEvent.setup();
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ message: 'User created successfully.' }),
     });
+    (signIn as jest.Mock).mockResolvedValue({ error: null });
 
     render(<RegisterForm />);
     await user.type(screen.getByLabelText(/email/i), 'new@example.com');
@@ -49,6 +72,32 @@ describe('RegisterForm', () => {
     await user.click(screen.getByRole('button', { name: /register/i }));
 
     await waitFor(() => {
+      expect(signIn).toHaveBeenCalledWith('credentials', {
+        redirect: false,
+        email: 'new@example.com',
+        password: 'password123',
+      });
+      expect(toast.success).toHaveBeenCalledWith('Account created!');
+      expect(mockRefresh).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  it('successful registration but failed auto-login redirects to /login', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ message: 'User created successfully.' }),
+    });
+    (signIn as jest.Mock).mockResolvedValue({ error: 'CredentialsSignin' });
+
+    render(<RegisterForm />);
+    await user.type(screen.getByLabelText(/email/i), 'new@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /register/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Account created! Please log in.');
       expect(mockPush).toHaveBeenCalledWith('/login');
     });
   });

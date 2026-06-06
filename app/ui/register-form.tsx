@@ -1,7 +1,9 @@
 'use client';
 
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -28,7 +30,20 @@ export default function RegisterForm() {
       });
 
       if (res.ok) {
-        router.push('/login');
+        const signInResult = await signIn('credentials', {
+          redirect: false,
+          email,
+          password,
+        });
+
+        if (signInResult?.error) {
+          toast.error('Account created! Please log in.');
+          router.push('/login');
+        } else {
+          toast.success('Account created!');
+          router.push('/dashboard');
+          router.refresh();
+        }
       } else {
         const data = await res.json();
         setError(data.message || 'An error occurred during registration.');

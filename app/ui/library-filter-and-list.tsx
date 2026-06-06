@@ -13,10 +13,10 @@ import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 // We use SerializedMovie for all client state
 
 const SORT_OPTIONS = [
-  { label: 'Title',                 value: 'title',        defaultOrder: 1  },
-  { label: 'Date Added to Library', value: 'addedAt',      defaultOrder: -1 },
-  { label: 'Genre',                 value: 'genre',        defaultOrder: 1  },
-  { label: 'Release Year',         value: 'release_date', defaultOrder: -1 },
+    { label: 'Title', value: 'title', defaultOrder: 1 },
+    { label: 'Date Added to Library', value: 'addedAt', defaultOrder: -1 },
+    { label: 'Genre', value: 'genre', defaultOrder: 1 },
+    { label: 'Release Year', value: 'release_date', defaultOrder: -1 },
 ] as const;
 
 export default function LibraryFilterAndList({ initialMovies, initialHasMore }: { initialMovies: SerializedMovie[], initialHasMore?: boolean }) {
@@ -36,6 +36,10 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
         const opt = SORT_OPTIONS.find(o => o.value === newField)!;
         setSortOrder(opt.defaultOrder as 1 | -1);
     };
+
+    useEffect(() => {
+        setMovies(initialMovies);
+    }, [initialMovies]);
 
     useEffect(() => {
         setIsMounted(true);
