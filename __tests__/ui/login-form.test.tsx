@@ -2,19 +2,28 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginForm from '@/app/ui/login-form';
 
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
 // Mock next-auth/react
-const mockSignIn = jest.fn();
 jest.mock('next-auth/react', () => ({
-  signIn: (...args: any[]) => mockSignIn(...args),
+  signIn: jest.fn(),
 }));
 
 // Mock next/navigation
-const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: jest.fn(),
 }));
 
 describe('LoginForm', () => {
+  let mockPush: jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPush = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+  });
+
   it('renders email + password inputs and submit button', () => {
     render(<LoginForm />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -24,7 +33,7 @@ describe('LoginForm', () => {
 
   it('submits form and calls signIn with credentials', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockResolvedValue({ error: null });
+    (signIn as jest.Mock).mockResolvedValue({ error: null });
 
     render(<LoginForm />);
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
@@ -32,7 +41,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockSignIn).toHaveBeenCalledWith('credentials', {
+      expect(signIn).toHaveBeenCalledWith('credentials', {
         redirect: false,
         email: 'test@example.com',
         password: 'password123',
@@ -42,7 +51,7 @@ describe('LoginForm', () => {
 
   it('on signIn success, router pushes to /dashboard', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockResolvedValue({ error: null });
+    (signIn as jest.Mock).mockResolvedValue({ error: null });
 
     render(<LoginForm />);
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
@@ -56,7 +65,7 @@ describe('LoginForm', () => {
 
   it('on signIn error, displays error message', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockResolvedValue({ error: 'CredentialsSignin' });
+    (signIn as jest.Mock).mockResolvedValue({ error: 'CredentialsSignin' });
 
     render(<LoginForm />);
     await user.type(screen.getByLabelText(/email/i), 'wrong@example.com');
@@ -71,7 +80,7 @@ describe('LoginForm', () => {
   it('error clears on new submission', async () => {
     const user = userEvent.setup();
     // First login fails
-    mockSignIn.mockResolvedValueOnce({ error: 'CredentialsSignin' });
+    (signIn as jest.Mock).mockResolvedValueOnce({ error: 'CredentialsSignin' });
 
     render(<LoginForm />);
     await user.type(screen.getByLabelText(/email/i), 'wrong@example.com');
@@ -83,7 +92,7 @@ describe('LoginForm', () => {
     });
 
     // Second login attempt — error should clear immediately
-    mockSignIn.mockResolvedValueOnce({ error: null });
+    (signIn as jest.Mock).mockResolvedValueOnce({ error: null });
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {

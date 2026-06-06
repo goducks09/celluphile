@@ -52,7 +52,14 @@ Cypress.Commands.add('loginUser', (email: string, password: string) => {
       cy.url().should('include', '/dashboard');
     },
     {
-      cacheAcrossSpecs: true,
+      validate() {
+        // If the DB was wiped between specs the server returns an empty session
+        // object. This assertion will fail, causing Cypress to discard the
+        // cached session and re-run the login setup above automatically.
+        cy.request({ url: '/api/auth/session', failOnStatusCode: false })
+          .its('body.user')
+          .should('exist');
+      },
     }
   );
   // Important: cy.session doesn't change the current URL.
