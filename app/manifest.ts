@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
         description: 'A Progressive Web App for managing your movie library, built with Next.js.',
         start_url: '/dashboard',
         display: 'standalone',
-        background_color: '#ffffff',
+        background_color: '#1a1a2e',
         theme_color: '#4f46e5', // Indigo-600 to match the app theme
         icons: [
             {

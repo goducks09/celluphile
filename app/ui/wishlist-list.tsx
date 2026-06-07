@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import type { SerializedWishlistMovie } from '@/app/lib/data';
 import { removeMovieFromWishlist, addMovieToLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
+import { compareTitles } from '@/app/lib/sort-utils';
 
 export default function WishlistList({ initialMovies }: { initialMovies: SerializedWishlistMovie[] }) {
     const [movies, setMovies] = useState<SerializedWishlistMovie[]>(initialMovies);
@@ -70,14 +71,24 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
     };
 
     const sortedMovies = [...optimisticMovies].sort((a, b) => {
-        if (sortBy === 'addedAt') return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
-        if (sortBy === 'title') return a.title.localeCompare(b.title);
-        if (sortBy === 'releaseDate') {
+        let result: number;
+        if (sortBy === 'addedAt') {
+            result = new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+        } else if (sortBy === 'title') {
+            return compareTitles(a.title, b.title);
+        } else if (sortBy === 'releaseDate') {
             const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
             const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-            return dateB - dateA;
+            result = dateB - dateA;
+        } else {
+            result = 0;
         }
-        return 0;
+        
+        // Tie-breaker: deterministic ordering by title
+        if (result === 0) {
+            result = compareTitles(a.title, b.title);
+        }
+        return result;
     });
 
     if (optimisticMovies.length === 0) {

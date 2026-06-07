@@ -57,32 +57,32 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
     return (
         <div className="w-full flex flex-col items-center gap-4 sm:gap-5">
             <Link href={`/library/${movie.tmdbId}`} className={`block w-full transition-opacity ${loading ? 'opacity-50' : 'opacity-100'} hover:scale-[1.02] transition-transform duration-300`}>
-                <div className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-[var(--border)]" style={{ background: 'var(--background-card)' }}>
+                <div className="flex flex-row rounded-xl shadow-2xl overflow-hidden border border-[var(--border)] w-full" style={{ background: 'var(--background-card)' }}>
                     {movie.poster ? (
-                        <div className="relative w-full sm:w-auto h-[30vh] sm:h-[45vh] max-h-[260px] sm:max-h-[340px] min-h-[160px] sm:min-h-[220px] aspect-[2/3] bg-zinc-900 mx-auto flex-shrink-0">
+                        <div className="relative w-2/5 sm:w-[240px] md:w-[300px] aspect-[2/3] bg-zinc-900 flex-shrink-0">
                             <Image
                                 src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
                                 alt={`${movie.title} poster`}
                                 fill
-                                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                sizes="(max-width: 640px) 40vw, (max-width: 768px) 240px, 300px"
                                 className="object-cover"
                                 loading="eager"
                             />
-                            <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 rounded text-sm text-white font-medium border border-white/20 backdrop-blur-sm">
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-black/70 rounded text-[10px] sm:text-sm text-white font-medium border border-white/20 backdrop-blur-sm">
                                 {movie.quality}
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full sm:w-auto h-[30vh] sm:h-[45vh] max-h-[260px] sm:max-h-[340px] min-h-[160px] sm:min-h-[220px] aspect-[2/3] flex items-center justify-center relative flex-shrink-0 mx-auto" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
-                            <span className="text-sm">No Poster Available</span>
-                            <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 rounded text-sm text-white font-medium border border-white/20 backdrop-blur-sm">
+                        <div className="w-2/5 sm:w-[240px] md:w-[300px] aspect-[2/3] flex items-center justify-center relative flex-shrink-0" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
+                            <span className="text-[10px] sm:text-sm text-center p-2">No Poster Available</span>
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-black/70 rounded text-[10px] sm:text-sm text-white font-medium border border-white/20 backdrop-blur-sm">
                                 {movie.quality}
                             </div>
                         </div>
                     )}
-                    <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between" style={{ color: 'var(--foreground)' }}>
+                    <div className="p-3 sm:p-6 flex-1 flex flex-col" style={{ color: 'var(--foreground)' }}>
                         <div className="flex flex-col h-full justify-center">
-                            <h3 className="font-extrabold text-xl sm:text-2xl leading-tight mb-2 tracking-tight line-clamp-2">{movie.title}</h3>
+                            <h3 className="font-extrabold text-lg sm:text-2xl leading-tight mb-1 sm:mb-2 tracking-tight line-clamp-2 sm:line-clamp-3">{movie.title}</h3>
                             <div className="flex flex-wrap items-center gap-2 text-sm mb-3 font-semibold" style={{ color: 'var(--foreground-muted)' }}>
                                 {movie.releaseDate && (
                                     <span>{movie.releaseDate.split('-')[0]}</span>
@@ -90,22 +90,27 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
                                 {movie.releaseDate && movie.runtime ? <span>•</span> : null}
                                 {movie.runtime ? <span>{`${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`}</span> : null}
                             </div>
-                            
+
                             {movie.directors && movie.directors.length > 0 && (
-                                <p className="text-sm mb-2">
+                                <p className="text-[10px] sm:text-sm mb-1 sm:mb-2 line-clamp-1">
                                     <span style={{ color: 'var(--foreground-muted)' }}>Dir:</span> <span className="font-medium">{movie.directors.map(d => d.fullName).join(', ')}</span>
                                 </p>
                             )}
                             {movie.actors && movie.actors.length > 0 && (
-                                <p className="text-xs sm:text-sm mb-1 italic line-clamp-2 opacity-80" style={{ color: 'var(--foreground-muted)' }}>
+                                <p className="text-[10px] sm:text-sm mb-1 italic line-clamp-1 sm:line-clamp-2 opacity-80" style={{ color: 'var(--foreground-muted)' }}>
                                     {movie.actors.map(a => a.fullName).join(', ')}
+                                </p>
+                            )}
+                            {movie.overview && (
+                                <p className="text-xs sm:text-sm mt-1 sm:mt-3 line-clamp-4 sm:line-clamp-6" style={{ color: 'var(--foreground-muted)' }}>
+                                    {movie.overview}
                                 </p>
                             )}
                         </div>
                     </div>
                 </div>
             </Link>
-            
+
             <button
                 onClick={handlePickAnother}
                 disabled={loading}
