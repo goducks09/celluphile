@@ -14,6 +14,7 @@ import type { Session } from 'next-auth';
 import type { IMovie, IActor, IDirector } from '../models/movie';
 import type { Quality } from './schemas';
 import { searchFiltersSchema, searchQuerySchema, searchSortSchema, searchPaginationSchema, movieIdSchema } from './schemas';
+import { getMongoSortTitlePipeline } from './sort-utils';
 
 // --- Shared Types and Helpers from actions.ts ---
 export type BaseSerializedMovie = Omit<IMovie, '_id' | 'lastFetched' | 'embedding' | keyof Document> & {
@@ -252,18 +253,21 @@ export async function searchUserLibrary(
             let sortConfig: any = {};
             if (safeSortOpts) {
                 if (safeSortOpts.field === 'title') {
-                    sortConfig = { 'movieDetails.title': safeSortOpts.order };
+                    sortConfig = { 'sortTitle': safeSortOpts.order };
                 } else if (safeSortOpts.field === 'release_date') {
-                    sortConfig = { 'movieDetails.releaseDate': safeSortOpts.order, 'movieDetails.title': 1 };
+                    sortConfig = { 'movieDetails.releaseDate': safeSortOpts.order, 'sortTitle': 1 };
                 } else if (safeSortOpts.field === 'addedAt') {
-                    sortConfig = { addedAt: safeSortOpts.order, 'movieDetails.title': 1 };
+                    sortConfig = { addedAt: safeSortOpts.order, 'sortTitle': 1 };
                 } else if (safeSortOpts.field === 'genre') {
-                    sortConfig = { 'movieDetails.genres.0': safeSortOpts.order, 'movieDetails.title': 1 };
+                    sortConfig = { 'movieDetails.genres.0': safeSortOpts.order, 'sortTitle': 1 };
                 }
             } else {
-                sortConfig = { 'movieDetails.title': 1 };
+                sortConfig = { 'sortTitle': 1 };
             }
+            
+            pipeline.push(getMongoSortTitlePipeline('$movieDetails.title', 'sortTitle'));
             pipeline.push({ $sort: sortConfig });
+            pipeline.push({ $project: { sortTitle: 0 } });
         }
 
         const skip = (page - 1) * limit;

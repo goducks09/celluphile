@@ -9,6 +9,7 @@ import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 import { toast } from 'sonner';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
+import { compareTitles } from '@/app/lib/sort-utils';
 
 // We use SerializedMovie for all client state
 
@@ -72,7 +73,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                         let result: number;
                         switch (sortField) {
                             case 'title':
-                                result = sortOrder * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                                result = compareTitles(a.title, b.title, sortOrder);
                                 break;
                             case 'addedAt':
                                 result = sortOrder * (new Date(a.addedAt).getTime() - new Date(b.addedAt).getTime());
@@ -88,7 +89,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                         }
                         // Tie-breaker: fall back to title for deterministic ordering
                         if (result === 0 && sortField !== 'title') {
-                            result = a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                            result = compareTitles(a.title, b.title, 1);
                         }
                         return result;
                     });
