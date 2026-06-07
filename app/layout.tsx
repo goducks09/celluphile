@@ -1,5 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 
 import ClientLayout from './client-layout';
@@ -16,10 +16,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: '#1a1a2e',
+};
+
 export const metadata: Metadata = {
   title: "Celluphile Movie Library",
   description: "The personal movie library app for movie lovers.",
-  themeColor: '#1a1a2e',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

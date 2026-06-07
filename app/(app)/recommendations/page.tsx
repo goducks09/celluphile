@@ -59,40 +59,40 @@ export default async function RecommendationsPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-2 sm:px-4">
                 {movies.map((movie, index) => (
                     <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                         {movie.poster ? (
-                            <div className="relative w-full h-80 group">
+                            <div className="relative w-full aspect-[2/3]">
                                 <Image
                                     src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
                                     alt={`${movie.title} poster`}
                                     fill
-                                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"
                                     className="object-cover"
-                                    loading={index === 0 ? 'eager' : 'lazy'}
+                                    loading={index < 4 ? 'eager' : 'lazy'}
                                 />
                             </div>
                         ) : (
-                            <div className="w-full h-80 flex items-center justify-center" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
+                            <div className="w-full aspect-[2/3] flex items-center justify-center text-xs sm:text-base text-center p-2" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
                                 No Poster Available
                             </div>
                         )}
-                        <div className="p-4 flex-1 flex flex-col justify-between">
+                        <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 className="font-bold text-lg leading-tight mb-1">{movie.title}</h3>
-                                <p className="text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
+                                <h3 className="font-bold text-sm sm:text-lg leading-tight mb-1 line-clamp-2">{movie.title}</h3>
+                                <p className="text-[10px] sm:text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
                                     {movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}
                                     {movie.releaseDate && movie.runtime ? ' • ' : ''}
                                     {movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
                                 </p>
                                 {movie.genres && movie.genres.length > 0 && (
-                                    <p className="text-xs mb-2 font-medium text-indigo-400">
+                                    <p className="text-[10px] sm:text-xs mb-1 sm:mb-2 font-medium text-indigo-400 line-clamp-1">
                                         {movie.genres.join(', ')}
                                     </p>
                                 )}
                                 {movie.overview && (
-                                    <p className="text-xs line-clamp-4 mt-2" style={{ color: 'var(--foreground-muted)' }}>
+                                    <p className="text-[10px] sm:text-xs line-clamp-3 sm:line-clamp-4 mt-1 sm:mt-2" style={{ color: 'var(--foreground-muted)' }}>
                                         {movie.overview}
                                     </p>
                                 )}
