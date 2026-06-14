@@ -9,7 +9,7 @@ import { type SerializedMovie } from '@/app/lib/data';
 import { updateMovieInLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 
-export default function ItemDetail({ movie: initialMovie }: { movie: SerializedMovie }) {
+export default function ItemDetail({ movie: initialMovie, mode = 'library', children }: { movie: SerializedMovie, mode?: 'library' | 'recommendation', children?: React.ReactNode }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [movie, setMovie] = useState<SerializedMovie>(initialMovie);
@@ -166,7 +166,7 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
 
                     {isEditing ? (
                         <div className="mt-4 bg-[var(--background-card)] p-4 rounded-lg border border-[var(--border)]">
-                            <h3 className="text-sm font-semibold mb-3 text-[var(--accent-light)]">Edit Metadata</h3>
+                            <h3 className="text-sm font-semibold mb-3 text-[var(--accent-light)]">Edit</h3>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1 text-[var(--foreground-muted)]">Quality</label>
                                 <div className="flex flex-wrap gap-3">
@@ -219,10 +219,10 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                                 </button>
                             </div>
                         </div>
-                    ) : (
+                    ) : mode === 'library' && (
                         <div className="mt-2 text-sm font-medium flex flex-wrap gap-1">
                             {(Array.isArray(movie.quality) ? movie.quality : [movie.quality]).map((q) => (
-                                <span key={q} className="item-badge item-badge--quality">{q}</span>
+                                q ? <span key={q} className="item-badge item-badge--quality">{q}</span> : null
                             ))}
                         </div>
                     )}
@@ -259,28 +259,32 @@ export default function ItemDetail({ movie: initialMovie }: { movie: SerializedM
                             </div>
                         )}
 
-                        <div>
-                            <h3 className="item-section-label">Added to Library</h3>
-                            <p className="text-sm text-[var(--foreground-muted)]">{formatDate(movie.addedAt)}</p>
-                        </div>
+                        {mode === 'library' && (
+                            <div>
+                                <h3 className="item-section-label">Added to Library</h3>
+                                <p className="text-sm text-[var(--foreground-muted)]">{formatDate(movie.addedAt)}</p>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="item-actions">
-                        {!isEditing && (
-                            <button className="item-edit-btn" onClick={() => setIsEditing(true)}>
+                    {mode === 'recommendation' ? children : (
+                        <div className="item-actions">
+                            {!isEditing && (
+                                <button className="item-edit-btn" onClick={() => setIsEditing(true)}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Edit
+                                </button>
+                            )}
+                            <button className="item-delete-btn" onClick={() => setIsDeleting(true)}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                Edit Metadata
+                                Remove
                             </button>
-                        )}
-                        <button className="item-delete-btn" onClick={() => setIsDeleting(true)}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Remove
-                        </button>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

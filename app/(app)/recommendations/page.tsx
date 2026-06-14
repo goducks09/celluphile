@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getRecommendations } from '@/app/lib/data';
 import { auth } from '@/auth';
+import AddRecommendationButton from '@/app/ui/add-recommendation-button';
 
 export default async function RecommendationsPage() {
     const session = await auth();
@@ -61,9 +62,9 @@ export default async function RecommendationsPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-2 sm:px-4">
                 {movies.map((movie, index) => (
-                    <div key={movie.tmdbId} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
+                    <div key={movie.tmdbId} className="relative flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                         {movie.poster ? (
-                            <div className="relative w-full aspect-[2/3]">
+                            <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] block" prefetch={false} aria-label={`View ${movie.title} details`}>
                                 <Image
                                     src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
                                     alt={`${movie.title} poster`}
@@ -72,15 +73,18 @@ export default async function RecommendationsPage() {
                                     className="object-cover"
                                     loading={index < 4 ? 'eager' : 'lazy'}
                                 />
-                            </div>
+                            </Link>
                         ) : (
-                            <div className="w-full aspect-[2/3] flex items-center justify-center text-xs sm:text-base text-center p-2" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }}>
+                            <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] flex items-center justify-center text-xs sm:text-base text-center p-2 block" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }} prefetch={false} aria-label={`View ${movie.title} details`}>
                                 No Poster Available
-                            </div>
+                            </Link>
                         )}
+
                         <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 className="font-bold text-sm sm:text-lg leading-tight mb-1 line-clamp-2">{movie.title}</h3>
+                                <h3 className="font-bold text-sm sm:text-lg leading-tight mb-1 line-clamp-2">
+                                    {movie.title}
+                                </h3>
                                 <p className="text-[10px] sm:text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
                                     {movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}
                                     {movie.releaseDate && movie.runtime ? ' • ' : ''}
@@ -91,13 +95,10 @@ export default async function RecommendationsPage() {
                                         {movie.genres.join(', ')}
                                     </p>
                                 )}
-                                {movie.overview && (
-                                    <p className="text-[10px] sm:text-xs line-clamp-3 sm:line-clamp-4 mt-1 sm:mt-2" style={{ color: 'var(--foreground-muted)' }}>
-                                        {movie.overview}
-                                    </p>
-                                )}
                             </div>
                         </div>
+
+                        <AddRecommendationButton movie={movie} />
                     </div>
                 ))}
             </div>

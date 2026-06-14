@@ -138,7 +138,7 @@ describe('ItemDetail Component', () => {
 
         render(<ItemDetail movie={mockMovie} />);
 
-        await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
+        await user.click(screen.getByRole('button', { name: /Edit/i }));
 
         const notesTextarea = screen.getByPlaceholderText('Add custom notes...');
         await user.type(notesTextarea, 'Great movie!');
@@ -162,7 +162,7 @@ describe('ItemDetail Component', () => {
 
         render(<ItemDetail movie={mockMovie} />);
 
-        await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
+        await user.click(screen.getByRole('button', { name: /Edit/i }));
 
         // Check '4K' checkbox (Blu-ray is already checked)
         await user.click(screen.getByRole('checkbox', { name: /4k/i }));
@@ -187,7 +187,7 @@ describe('ItemDetail Component', () => {
 
         render(<ItemDetail movie={mockMovie} />);
 
-        await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
+        await user.click(screen.getByRole('button', { name: /Edit/i }));
         const notesTextarea = screen.getByPlaceholderText('Add custom notes...');
         await user.type(notesTextarea, 'Offline edit');
 
@@ -213,7 +213,7 @@ describe('ItemDetail Component', () => {
         render(<ItemDetail movie={mockMovie} />);
 
         // Enter edit mode
-        await user.click(screen.getByRole('button', { name: /Edit Metadata/i }));
+        await user.click(screen.getByRole('button', { name: /Edit/i }));
         expect(screen.getByPlaceholderText('Add custom notes...')).toBeInTheDocument();
 
         // Check 4K checkbox to change quality
@@ -319,5 +319,40 @@ describe('ItemDetail Component', () => {
         // Nothing should have been called
         expect(removeMovieFromLibrary).not.toHaveBeenCalled();
         expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    // ============================================================
+    // Recommendation mode
+    // ============================================================
+
+    describe('recommendation mode', () => {
+        it('renders movie details but hides library-specific fields', () => {
+            render(<ItemDetail movie={mockMovie} mode="recommendation" />);
+            
+            // Should render title and details
+            expect(screen.getByText('Test Movie')).toBeInTheDocument();
+            expect(screen.getByText('John Doe')).toBeInTheDocument();
+            
+            // Should NOT render Edit/Remove buttons
+            expect(screen.queryByRole('button', { name: /Edit/i })).toBeNull();
+            expect(screen.queryByRole('button', { name: /Remove/i })).toBeNull();
+            
+            // Should NOT render "Added to Library" section
+            expect(screen.queryByText('Added to Library')).toBeNull();
+            
+            // Should NOT render quality badges
+            expect(screen.queryByText('Blu-ray')).toBeNull();
+        });
+
+        it('renders children in the action slot', () => {
+            render(
+                <ItemDetail movie={mockMovie} mode="recommendation">
+                    <button>Custom Action</button>
+                </ItemDetail>
+            );
+            
+            // Should render the custom child
+            expect(screen.getByRole('button', { name: 'Custom Action' })).toBeInTheDocument();
+        });
     });
 });
