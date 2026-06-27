@@ -77,8 +77,9 @@ describe('E2E-1: Authentication Flow', () => {
     // First log in
     cy.loginUser(testEmail, testPassword);
 
-    // Then log out
-    cy.contains('button', 'Sign Out').click({ force: true });
+    // Open the navigation drawer first
+    cy.get('button[aria-label="Open Menu"]').click();
+    cy.contains('button', 'Sign Out').click();
 
     // signOut() redirects to the login page
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');

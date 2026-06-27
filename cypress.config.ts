@@ -7,6 +7,9 @@ import { MongoClient } from 'mongodb';
 loadEnvConfig(process.cwd());
 
 export default defineConfig({
+  env: {
+    testPassword: process.env.CYPRESS_testPassword,
+  },
   e2e: {
     allowCypressEnv: false,
     baseUrl: 'http://localhost:3000',
