@@ -9,6 +9,7 @@ import { registerBackgroundSync } from '@/app/lib/sync';
 import { type SerializedMovie } from '@/app/lib/data';
 import { updateMovieInLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 
 export default function ItemDetail({ movie: initialMovie, mode = 'library', children }: { movie: SerializedMovie, mode?: 'library' | 'recommendation', children?: React.ReactNode }) {
     const router = useRouter();
@@ -135,7 +136,7 @@ export default function ItemDetail({ movie: initialMovie, mode = 'library', chil
                 <div className="item-poster-wrap">
                     {movie.poster ? (
                         <Image
-                            src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
+                            src={getTMDBImageUrl(movie.poster, 'w500')}
                             alt={`${movie.title} poster`}
                             fill
                             sizes="(max-width: 768px) 100vw, 300px"

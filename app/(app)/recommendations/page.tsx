@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getRecommendations } from '@/app/lib/data';
 import { auth } from '@/auth';
 import AddRecommendationButton from '@/app/ui/add-recommendation-button';
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 
 export default async function RecommendationsPage() {
     const session = await auth();
@@ -66,7 +67,7 @@ export default async function RecommendationsPage() {
                         {movie.poster ? (
                             <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] block" prefetch={false} aria-label={`View ${movie.title} details`}>
                                 <Image
-                                    src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
+                                    src={getTMDBImageUrl(movie.poster, 'w500')}
                                     alt={`${movie.title} poster`}
                                     fill
                                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"

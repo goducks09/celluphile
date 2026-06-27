@@ -70,3 +70,16 @@ export function extractCredits(details: TMDBMovieDetails, maxCast = 5) {
 
   return { actors, directors };
 }
+
+/**
+ * Helper to construct TMDB image URLs.
+ * Bypasses external requests during E2E tests to prevent 404s and rate-limiting.
+ */
+export function getTMDBImageUrl(path: string | null | undefined, size: 'w342' | 'w500' = 'w500'): string {
+  if (!path) return '';
+  if (process.env.NEXT_PUBLIC_TEST_MODE === 'true') {
+    // Return a base64 transparent GIF to avoid external image requests during testing
+    return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  }
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}

@@ -79,6 +79,8 @@ describe('E2E-1: Authentication Flow', () => {
 
     // Open the navigation drawer first
     cy.get('button[aria-label="Open Menu"]').click();
+    // Wait for the drawer animation to finish so the button is fully visible and clickable
+    cy.wait(500);
     cy.contains('button', 'Sign Out').click();
 
     // signOut() redirects to the login page

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 import { type SerializedMovie } from '@/app/lib/data';
 import { db } from '@/app/lib/db-client';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
@@ -265,7 +266,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                             {movie.poster ? (
                                 <div className="relative w-full aspect-[2/3]">
                                     <Image
-                                        src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
+                                        src={getTMDBImageUrl(movie.poster, 'w500')}
                                         alt={`${movie.title} poster`}
                                         fill
                                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"

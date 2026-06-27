@@ -92,6 +92,8 @@ describe('E2E-4: Server Action Security', () => {
     // Log out and wait for redirect to complete
     cy.visit('/dashboard');
     cy.get('button[aria-label="Open Menu"]').click();
+    // Wait for the drawer animation to finish so the button is fully visible and clickable
+    cy.wait(500);
     cy.contains('button', 'Sign Out').click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');
 
