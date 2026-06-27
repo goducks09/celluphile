@@ -1,0 +1,43 @@
+name: Cypress CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v7
+        with:
+          start: npm run dev
+          wait-on: 'http://localhost:3000'
+        env:
+          NODE_ENV: test
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          TMDB_API_KEY: "test-mock-key-not-real"
+          TMDB_API_READ_ACCESS_TOKEN: "test-mock-token-not-real"
+          TMDB_API_BASE_URL: "http://localhost:3000/api/test/tmdb"
+          TEST_MODE: "true"
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: "FAKE_VAPID_PUBLIC_KEY_FOR_TESTING_ONLY_NOT_REAL"
+          VAPID_PRIVATE_KEY: "FAKE_VAPID_PRIVATE_KEY_FOR_TESTING_ONLY_NOT_REAL"
+          VAPID_SUBJECT: "mailto:test@celluphile.com"
+          CRON_SECRET: "test-cron-secret-123"
+          CYPRESS_testPassword: ${{ secrets.CYPRESS_TEST_PASSWORD }}
+
+      - name: Upload Cypress artifacts
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: cypress-results
+          path: |
+            cypress/screenshots/
+            cypress/videos/
+          retention-days: 7
