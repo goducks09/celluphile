@@ -264,7 +264,7 @@ export async function searchUserLibrary(
             } else {
                 sortConfig = { 'sortTitle': 1 };
             }
-            
+
             pipeline.push(getMongoSortTitlePipeline('$movieDetails.title', 'sortTitle'));
             pipeline.push({ $sort: sortConfig });
             pipeline.push({ $project: { sortTitle: 0 } });
@@ -509,3 +509,36 @@ export async function getRecommendations(): Promise<{ success: boolean; message?
     }
 }
 
+export async function getMovieFromCatalog(
+    tmdbId: number
+): Promise<{ success: boolean; movie?: SerializedMovie; message?: string }> {
+    const { session, error } = await getValidatedSession('view movie details');
+    if (error) return error;
+
+    const parsedId = movieIdSchema.safeParse(tmdbId);
+    if (!parsedId.success) return { success: false, message: 'Invalid movie ID.' };
+
+    try {
+        await dbConnect();
+        const movieDetails = await Movie.findOne({ tmdbId: parsedId.data }).lean();
+        if (!movieDetails) return { success: false, message: 'Movie not found.' };
+
+        const baseObj = {
+            _id: movieDetails._id,
+            userId: session.user.id,
+            tmdbId: movieDetails.tmdbId,
+            addedAt: new Date()
+        };
+
+        const serialized: SerializedMovie = {
+            ...serializeBaseMovie(baseObj, movieDetails),
+            quality: [],
+            customNotes: ''
+        };
+
+        return { success: true, movie: serialized };
+    } catch (err) {
+        console.error('Error fetching movie from catalog:', err);
+        return { success: false, message: 'Failed to fetch movie details.' };
+    }
+}

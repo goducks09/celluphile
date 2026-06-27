@@ -6,6 +6,7 @@ import type { TMDBSearchResponse, TMDBMovie } from '@/app/lib/tmdb-utils';
 import { extractCredits } from '@/app/lib/tmdb-utils';
 import { addMovieToLibrary, addMovieToWishlist, removeMovieFromWishlist } from '@/app/lib/actions';
 import { db } from '@/app/lib/db-client';
+import { registerBackgroundSync } from '@/app/lib/sync';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
 import { toast } from 'sonner';
 
@@ -176,6 +177,7 @@ export default function SearchAddMovie({
                             payload: { tmdbId: movie.id },
                             timestamp: Date.now()
                         });
+                        await registerBackgroundSync();
                         toast.success(`${movie.title} removed from wishlist offline.`, { id: loadingToastId });
                     } else {
                         let details;
@@ -202,6 +204,7 @@ export default function SearchAddMovie({
                             payload: { tmdbId: movie.id },
                             timestamp: Date.now()
                         });
+                        await registerBackgroundSync();
                         toast.success(`${movie.title} added to wishlist offline.`, { id: loadingToastId });
                     }
                 } catch (err) {
@@ -279,10 +282,12 @@ export default function SearchAddMovie({
                 try {
                     await db.movies.put({ ...payload, addedAt: new Date() });
                     await db.syncQueue.add({ action: 'add', payload, timestamp: Date.now() });
+                    await registerBackgroundSync();
                     
                     if (wishlistIds.has(movie.id)) {
                         await db.wishlist.delete(movie.id);
                         await db.syncQueue.add({ action: 'wishlist-remove', payload: { tmdbId: movie.id }, timestamp: Date.now() });
+                        await registerBackgroundSync();
                     }
                     
                     toast.success(`${movie.title} added offline. Will sync when connected.`, { id: loadingToastId });

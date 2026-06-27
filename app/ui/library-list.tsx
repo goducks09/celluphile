@@ -35,12 +35,6 @@ export default async function LibraryList() {
                 <p className="max-w-md mx-auto mb-8" style={{ color: 'var(--foreground-muted)' }}>
                     You haven&apos;t added any movies to your collection yet. Start building your personal cinematic universe by searching for your favorites!
                 </p>
-                <Link
-                    href="/dashboard"
-                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    Add Your First Movie
-                </Link>
             </div>
         );
     }

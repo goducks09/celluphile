@@ -79,8 +79,20 @@ export default function OfflineManager() {
         };
         const handleOffline = () => setIsOffline(true);
 
+        // Listen for messages from the service worker. When Background
+        // Sync processes the queue (possibly while no tabs were open),
+        // it posts SYNC_COMPLETED so we can refresh server-rendered data.
+        const handleSwMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'SYNC_COMPLETED') {
+                // The SW already cleared synced ops from IndexedDB.
+                // Reload the page to pick up fresh server-rendered content.
+                window.location.reload();
+            }
+        };
+
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+        navigator.serviceWorker?.addEventListener('message', handleSwMessage);
 
         // Sync the real online/offline state now that we're on the client.
         setIsOffline(!navigator.onLine);
@@ -95,6 +107,7 @@ export default function OfflineManager() {
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
         };
     }, []); // Stable — no state in deps; sync lock is managed via ref.
 
