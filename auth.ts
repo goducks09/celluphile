@@ -12,7 +12,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   logger: {
     error(error) {
-      if (error?.name === 'CredentialsSignin' || String(error?.message || '').includes('CredentialsSignin')) {
+      if (error?.name === 'CredentialsSignin' || (error as any)?.type === 'CredentialsSignin' || String(error?.message || '').includes('CredentialsSignin')) {
         return;
       }
       console.error('[auth][error]', error);
