@@ -21,6 +21,11 @@ function initWebPush() {
             console.warn('[@/lib/notifications/send] VAPID configuration is incomplete. Push notifications will be disabled.');
             return;
         }
+        if (process.env.TEST_MODE === 'true') {
+            console.log('[@/lib/notifications/send] Skipping web push initialization in test mode.');
+            webPushInitialized = true; // Ensure tests don't short-circuit
+            return;
+        }
         webpush.setVapidDetails(vapidSubject, publicKey, privateKey);
         webPushInitialized = true;
     } catch (err) {

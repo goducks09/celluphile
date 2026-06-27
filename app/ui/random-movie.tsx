@@ -1,5 +1,6 @@
 'use client';
 
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -61,7 +62,7 @@ export default function RandomMovieClient({ initialMovie }: { initialMovie: Seri
                     {movie.poster ? (
                         <div className="relative w-2/5 sm:w-[240px] md:w-[300px] aspect-[2/3] bg-zinc-900 flex-shrink-0">
                             <Image
-                                src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
+                                src={getTMDBImageUrl(movie.poster, 'w500')}
                                 alt={`${movie.title} poster`}
                                 fill
                                 sizes="(max-width: 640px) 40vw, (max-width: 768px) 240px, 300px"

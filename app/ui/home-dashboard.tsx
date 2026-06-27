@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 import type { SerializedMovie, LibraryStats } from '@/app/lib/data';
 import { QUALITY_COLORS } from '@/app/ui/constants';
 
@@ -87,7 +88,7 @@ export default function HomeDashboard({
                                 {/* Poster or Placeholder */}
                                 {movie.poster ? (
                                     <Image
-                                        src={`https://image.tmdb.org/t/p/w342${movie.poster}`}
+                                        src={getTMDBImageUrl(movie.poster, 'w342')}
                                         alt={`${movie.title} poster`}
                                         fill
                                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"

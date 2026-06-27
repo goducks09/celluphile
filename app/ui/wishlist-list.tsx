@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 import type { SerializedWishlistMovie } from '@/app/lib/data';
 import { removeMovieFromWishlist, addMovieToLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
@@ -123,7 +124,7 @@ export default function WishlistList({ initialMovies }: { initialMovies: Seriali
                         <div className="aspect-[2/3] relative w-full" style={{ background: 'var(--background-input)' }}>
                             {movie.poster ? (
                                 <Image
-                                    src={`https://image.tmdb.org/t/p/w342${movie.poster}`}
+                                    src={getTMDBImageUrl(movie.poster, 'w342')}
                                     alt={`${movie.title} poster`}
                                     fill
                                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
