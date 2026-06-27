@@ -13,7 +13,11 @@ export async function POST(req: NextRequest) {
     url.pathname.endsWith('/api/auth/callback/credentials') ||
     url.pathname.endsWith('/api/auth/signin/credentials')
   ) {
-    const { rateLimited } = await checkRateLimit('update-object', { request: req });
+    let rateLimited = false;
+    if (process.env.TEST_MODE !== 'true' && process.env.NODE_ENV !== 'development') {
+      const result = await checkRateLimit('update-object', { request: req });
+      rateLimited = result.rateLimited;
+    }
     if (rateLimited) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', message: 'Rate limit exceeded' },

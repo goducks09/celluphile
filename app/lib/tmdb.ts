@@ -31,7 +31,11 @@ export async function searchMovies(query: string, page: number = 1): Promise<TMD
     }
 
     const reqHeaders = await headers();
-    const { rateLimited } = await checkRateLimit('update-object', { headers: reqHeaders });
+    let rateLimited = false;
+    if (process.env.TEST_MODE !== 'true' && process.env.NODE_ENV !== 'development') {
+        const result = await checkRateLimit('update-object', { headers: reqHeaders });
+        rateLimited = result.rateLimited;
+    }
     if (rateLimited) {
         throw new Error('Rate limit exceeded. Please try again later.');
     }
@@ -77,7 +81,11 @@ export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
     }
 
     const reqHeaders = await headers();
-    const { rateLimited } = await checkRateLimit('update-object', { headers: reqHeaders });
+    let rateLimited = false;
+    if (process.env.TEST_MODE !== 'true' && process.env.NODE_ENV !== 'development') {
+        const result = await checkRateLimit('update-object', { headers: reqHeaders });
+        rateLimited = result.rateLimited;
+    }
     if (rateLimited) {
         throw new Error('Rate limit exceeded. Please try again later.');
     }
