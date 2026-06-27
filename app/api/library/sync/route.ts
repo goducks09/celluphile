@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
                                     lastFetched: new Date(),
                                 },
                             },
-                            { upsert: true, new: true }
+                            { upsert: true, returnDocument: 'after' }
                         );
                     }
 
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
                     await UserMovie.findOneAndUpdate(
                         { userId, tmdbId },
                         { $set: parsedUpdate.data },
-                        { new: true }
+                        { returnDocument: 'after' }
                     );
                     results.push({ index: i, success: true, message: 'Updated.' });
                     break;
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
                                     lastFetched: new Date(),
                                 },
                             },
-                            { upsert: true, new: true }
+                            { upsert: true, returnDocument: 'after' }
                         );
                     }
 

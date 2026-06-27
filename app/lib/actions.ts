@@ -98,7 +98,7 @@ export async function addMovieToLibrary(movieData: z.infer<typeof addMovieSchema
                         lastFetched: new Date()
                     }
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: 'after' }
             );
         }
 
@@ -237,7 +237,7 @@ export async function addMovieToWishlist(tmdbId: number) {
                         lastFetched: new Date()
                     }
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: 'after' }
             );
         }
 
@@ -320,7 +320,7 @@ export async function updateMovieInLibrary(
         const result = await UserMovie.findOneAndUpdate(
             { userId: new Types.ObjectId(session.user.id), tmdbId: parsedId.data },
             { $set: parsedData.data },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!result) {

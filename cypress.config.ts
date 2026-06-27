@@ -27,10 +27,7 @@ export default defineConfig({
             const db = client.db();
             const collections = await db.collections();
             for (const col of collections) {
-              await col.drop().catch((err: any) => {
-                // NamespaceNotFound (26) means the collection was already gone — safe to ignore.
-                if (err.code !== 26) throw err;
-              });
+              await col.deleteMany({});
             }
             console.log('[Cypress] ✅ Test database wiped via task.');
           } finally {
@@ -54,9 +51,7 @@ export default defineConfig({
           const db = client.db();
           const collections = await db.collections();
           for (const col of collections) {
-            await col.drop().catch((err: any) => {
-              if (err.code !== 26) throw err;
-            });
+            await col.deleteMany({});
           }
           console.log('[Cypress] ✅ Test database wiped after run.');
         } catch (err) {
