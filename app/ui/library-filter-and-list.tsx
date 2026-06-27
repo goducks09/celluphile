@@ -259,7 +259,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                     <p className="mt-2" style={{ color: 'var(--foreground-muted)' }}>Try adjusting your search or filters.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 px-4">
                     {movies.map((movie, index) => (
                         <Link key={movie.tmdbId} href={`/library/${movie.tmdbId}`} className="flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
                             {movie.poster ? (
@@ -268,7 +268,7 @@ export default function LibraryFilterAndList({ initialMovies, initialHasMore }: 
                                         src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
                                         alt={`${movie.title} poster`}
                                         fill
-                                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"
                                         className="object-cover"
                                         loading={index === 0 ? 'eager' : 'lazy'}
                                     />
