@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/app/lib/db-client';
+import { registerBackgroundSync } from '@/app/lib/sync';
 import { type SerializedMovie } from '@/app/lib/data';
 import { updateMovieInLibrary, removeMovieFromLibrary } from '@/app/lib/actions';
 import { QUALITIES, type Quality } from '@/app/lib/schemas';
@@ -52,6 +53,7 @@ export default function ItemDetail({ movie: initialMovie, mode = 'library', chil
                         payload: { tmdbId: movie.tmdbId, ...updateData },
                         timestamp: Date.now()
                     });
+                    await registerBackgroundSync();
                     toast.success('Offline: Changes saved locally.');
                 } catch (error) {
                     console.error('Failed to queue update', error);
@@ -98,6 +100,7 @@ export default function ItemDetail({ movie: initialMovie, mode = 'library', chil
                         payload: { tmdbId: movie.tmdbId },
                         timestamp: Date.now()
                     });
+                    await registerBackgroundSync();
                     toast.success('Offline: Movie deleted locally. Returning to library.');
                     router.push('/library');
                 } catch (err) {
