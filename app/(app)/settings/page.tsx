@@ -1,6 +1,11 @@
 import NotificationSettings from '@/app/ui/notification-settings';
 import { getNotificationPreferences } from '@/app/lib/data';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function SettingsPage() {
     const res = await getNotificationPreferences();
     const initialPreferences = res.success && res.preferences ? res.preferences : undefined;

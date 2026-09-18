@@ -2,6 +2,11 @@ import Link from 'next/link';
 import { getRandomMovie } from '@/app/lib/data';
 import RandomMovieClient from '@/app/ui/random-movie';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function RandomPage() {
     const response = await getRandomMovie();
 

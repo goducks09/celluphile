@@ -1,6 +1,11 @@
 import { getUserWishlist } from '@/app/lib/data';
 import WishlistList from '@/app/ui/wishlist-list';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function WishlistPage() {
     const result = await getUserWishlist({ page: 1, limit: 100 }); // Increase limit since we don't have load-more implemented yet
     const initialMovies = result.success ? result.movies : [];

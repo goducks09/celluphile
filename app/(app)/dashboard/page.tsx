@@ -2,6 +2,11 @@ import { auth } from '@/auth';
 import { searchUserLibrary, getLibraryStats } from '@/app/lib/data';
 import HomeDashboard from '@/app/ui/home-dashboard';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function DashboardPage() {
   const session = await auth();
 

@@ -5,6 +5,11 @@ import { auth } from '@/auth';
 import AddRecommendationButton from '@/app/ui/add-recommendation-button';
 import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function RecommendationsPage() {
     const session = await auth();
     if (!session?.user?.id) {
