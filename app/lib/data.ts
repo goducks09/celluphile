@@ -1,5 +1,6 @@
 import 'server-only';
 import { auth } from '@/auth';
+import { getSession } from '@/app/lib/auth-session';
 import { Types, type Document } from 'mongoose';
 import dbConnect from './mongoose';
 import Movie from '../models/movie';
@@ -36,11 +37,12 @@ export interface LibraryStats {
     thisMonth: number;
 }
 
+
 type SessionSuccess = { session: Session & { user: { id: string } }; error?: never };
 type SessionError = { error: { success: false; message: string }; session?: never };
 
-export async function getValidatedSession(errorStr: string): Promise<SessionSuccess | SessionError> {
-    const session = await auth();
+export async function getValidatedSession(errorStr: string, options?: { fresh?: boolean }): Promise<SessionSuccess | SessionError> {
+    const session = options?.fresh ? await auth() : await getSession();
     if (!session?.user?.id) {
         return { error: { success: false, message: 'You must be logged in to ' + errorStr + '.' } };
     }
@@ -48,6 +50,10 @@ export async function getValidatedSession(errorStr: string): Promise<SessionSucc
         return { error: { success: false, message: 'Invalid session.' } };
     }
     return { session: session as Session & { user: { id: string } } };
+}
+
+export async function getFreshValidatedSession(errorStr: string): Promise<SessionSuccess | SessionError> {
+    return getValidatedSession(errorStr, { fresh: true });
 }
 
 export function serializeBaseMovie(baseObj: any, movieDetails: any): BaseSerializedMovie {

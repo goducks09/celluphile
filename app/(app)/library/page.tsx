@@ -5,6 +5,10 @@ import { getUserMovieAndWishlistIds } from '@/app/lib/data';
 import { searchMovies } from '@/app/lib/tmdb';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 
+export const instant = {
+    unstable_samples: [{ searchParams: { q: null } }],
+};
+
 async function LibraryContent({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
     const params = await searchParams;
     const q = params?.q || '';

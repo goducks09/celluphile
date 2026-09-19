@@ -1,11 +1,11 @@
-import { auth } from '@/auth';
+import { getSession } from '@/app/lib/auth-session';
 import LibraryFilterAndList from './library-filter-and-list';
 import { searchUserLibrary } from '@/app/lib/data';
 import { FilmIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 export default async function LibraryList() {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user?.id) {
         return <div className="text-center p-8 mt-4 rounded shadow" style={{ background: 'var(--background-card)', color: 'var(--foreground-muted)' }}>Please log in to view your library.</div>;

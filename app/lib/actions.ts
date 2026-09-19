@@ -30,7 +30,7 @@ import {
     logEventSchema,
 } from './schemas';
 
-import { getValidatedSession } from './data';
+import { getFreshValidatedSession as getValidatedSession } from './data';
 import type { BaseSerializedMovie, SerializedMovie, SerializedWishlistMovie } from './data';
 
 function revalidateLibrary(tmdbId?: number) {

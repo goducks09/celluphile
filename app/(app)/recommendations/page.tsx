@@ -2,13 +2,13 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getRecommendations } from '@/app/lib/data';
-import { auth } from '@/auth';
+import { getSession } from '@/app/lib/auth-session';
 import AddRecommendationButton from '@/app/ui/add-recommendation-button';
 import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
 import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 
 async function RecommendationsContent() {
-    const session = await auth();
+    const session = await getSession();
     if (!session?.user?.id) {
         return <div className="text-center p-8 mt-4 rounded shadow" style={{ background: 'var(--background-card)', color: 'var(--foreground-muted)' }}>Please log in to view recommendations.</div>;
     }

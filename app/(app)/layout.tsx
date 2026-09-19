@@ -1,9 +1,10 @@
 import React, { Suspense } from 'react';
 import Navigation from '@/app/ui/navigation';
-import { auth, signOut } from '@/auth';
+import { signOut } from '@/auth';
+import { getSession } from '@/app/lib/auth-session';
 
 async function NavigationWithAuth() {
-    const session = await auth();
+    const session = await getSession();
 
     async function handleSignOut() {
         'use server';

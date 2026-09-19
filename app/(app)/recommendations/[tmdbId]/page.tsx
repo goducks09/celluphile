@@ -10,6 +10,10 @@ export const metadata: Metadata = {
     title: 'Recommendation Details | Celluphile',
 };
 
+export const instant = {
+    unstable_samples: [{ params: { tmdbId: '550' } }],
+};
+
 async function RecommendationDetailContent({ params }: { params: Promise<{ tmdbId: string }> }) {
     const { tmdbId: rawId } = await params;
     const tmdbId = parseInt(rawId, 10);

@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     title: 'Movie Details | Celluphile',
 };
 
+export const instant = {
+    unstable_samples: [{ params: { tmdbId: '550' } }],
+};
+
 export async function MovieDetailContent({ params }: { params: Promise<{ tmdbId: string }> }) {
     const { tmdbId: rawId } = await params;
     const tmdbId = parseInt(rawId, 10);
