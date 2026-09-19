@@ -1,28 +1,44 @@
+import { Suspense } from 'react';
 import SearchAddMovie from '@/app/ui/search-add-movie';
 import LibraryList from '@/app/ui/library-list';
 import { getUserMovieAndWishlistIds } from '@/app/lib/data';
 import { searchMovies } from '@/app/lib/tmdb';
+import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+async function LibraryContent({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+    const params = await searchParams;
+    const q = params?.q || '';
+    const searchPromise = q ? searchMovies(q) : null;
+    const { libraryIds = [], wishlistIds = [] } = await getUserMovieAndWishlistIds();
 
-export default async function LibraryPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const params = await searchParams;
-  const q = params?.q || '';
-  const searchPromise = q ? searchMovies(q) : null;
-  const { libraryIds = [], wishlistIds = [] } = await getUserMovieAndWishlistIds();
+    return (
+        <>
+            <SearchAddMovie
+                initialLibraryIds={libraryIds}
+                initialWishlistIds={wishlistIds}
+                searchPromise={searchPromise}
+                initialQuery={q}
+            />
+            <LibraryList />
+        </>
+    );
+}
 
-  return (
-    <>
-      <SearchAddMovie 
-        initialLibraryIds={libraryIds} 
-        initialWishlistIds={wishlistIds} 
-        searchPromise={searchPromise}
-        initialQuery={q}
-      />
-      <LibraryList />
-    </>
-  );
+export default function LibraryPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+    return (
+        <Suspense fallback={
+            <div className="w-full max-w-6xl mx-auto py-8 px-4">
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    {/* Search Bar Skeleton */}
+                    <div className="flex-1 h-10 rounded animate-pulse" style={{ background: 'var(--background-input)' }} />
+                    {/* Filter Dropdown Skeleton */}
+                    <div className="w-full md:w-48 h-10 rounded animate-pulse" style={{ background: 'var(--background-input)' }} />
+                </div>
+                {/* Grid Skeleton */}
+                <MoviesSkeleton count={20} />
+            </div>
+        }>
+            <LibraryContent searchParams={searchParams} />
+        </Suspense>
+    );
 }

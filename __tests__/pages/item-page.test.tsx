@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { render, screen } from '@testing-library/react';
 import { getMovieByTmdbId } from '@/app/lib/data';
 import { notFound, redirect } from 'next/navigation';
@@ -21,31 +22,40 @@ describe('ItemPage Server Component', () => {
         jest.clearAllMocks();
     });
 
-    it('calls notFound when tmdbId is not a valid number', async () => {
+    it('renders Suspense boundary with skeleton fallback', async () => {
         const ItemPage = (await import('@/app/(app)/library/[tmdbId]/page')).default;
+        const paramsPromise = Promise.resolve({ tmdbId: '550' });
+        const element = ItemPage({ params: paramsPromise });
+        
+        expect(element.type).toBe(Suspense);
+        expect(element.props.fallback).toBeDefined();
+    });
+
+    it('calls notFound when tmdbId is not a valid number', async () => {
+        const { MovieDetailContent } = await import('@/app/(app)/library/[tmdbId]/page');
         await expect(
-            ItemPage({ params: Promise.resolve({ tmdbId: 'abc' }) })
+            MovieDetailContent({ params: Promise.resolve({ tmdbId: 'abc' }) })
         ).rejects.toThrow('NEXT_NOT_FOUND');
         expect(notFound).toHaveBeenCalled();
     });
 
     it('redirects to library if user is not authenticated or not owner of data', async () => {
-        const ItemPage = (await import('@/app/(app)/library/[tmdbId]/page')).default;
+        const { MovieDetailContent } = await import('@/app/(app)/library/[tmdbId]/page');
         (getMovieByTmdbId as jest.Mock).mockResolvedValue({ success: false, message: 'Not found or forbidden' });
         
         await expect(
-            ItemPage({ params: Promise.resolve({ tmdbId: '550' }) })
+            MovieDetailContent({ params: Promise.resolve({ tmdbId: '550' }) })
         ).rejects.toThrow('NEXT_REDIRECT');
         
         expect(redirect).toHaveBeenCalledWith('/library');
     });
 
     it('renders ItemDetail component when movie is found', async () => {
-        const ItemPage = (await import('@/app/(app)/library/[tmdbId]/page')).default;
+        const { MovieDetailContent } = await import('@/app/(app)/library/[tmdbId]/page');
         const mockMovie = { title: 'Test Movie 123' };
         (getMovieByTmdbId as jest.Mock).mockResolvedValue({ success: true, movie: mockMovie });
         
-        const Resolved = await ItemPage({ params: Promise.resolve({ tmdbId: '550' }) });
+        const Resolved = await MovieDetailContent({ params: Promise.resolve({ tmdbId: '550' }) });
         render(Resolved);
         
         expect(screen.getByTestId('item-detail')).toHaveTextContent('Test Movie 123');
