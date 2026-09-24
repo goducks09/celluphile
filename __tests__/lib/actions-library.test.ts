@@ -25,7 +25,11 @@ jest.mock('mongoose', () => {
     };
 });
 
-jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
+jest.mock('next/cache', () => ({
+    revalidatePath: jest.fn(),
+    cacheLife: jest.fn(),
+    cacheTag: jest.fn(),
+}));
 jest.mock('@/auth', () => ({ auth: jest.fn().mockResolvedValue({ user: { id: '507f1f77bcf86cd799439011' } }) }));
 
 jest.mock('@/app/models/userMovie', () => {

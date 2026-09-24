@@ -11,6 +11,8 @@ jest.mock('@/app/lib/mongoose', () => jest.fn());
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
+  cacheLife: jest.fn(),
+  cacheTag: jest.fn(),
 }));
 
 // Fully mock mongoose to avoid BSON ESM import errors in jsdom

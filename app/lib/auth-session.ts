@@ -1,5 +1,6 @@
 import 'server-only';
 import { auth } from '@/auth';
+import { cacheLife } from 'next/cache';
 
 /**
  * Cached session reader for Server Components.
@@ -9,5 +10,6 @@ import { auth } from '@/auth';
  */
 export async function getSession() {
     'use cache: private';
+    cacheLife('default');
     return await auth();
 }
