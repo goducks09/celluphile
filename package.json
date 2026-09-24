@@ -20,18 +20,18 @@
     "e2e:file": "NODE_ENV=test start-server-and-test 'npm run dev > /dev/null 2>&1' http://localhost:3000 'cypress run --e2e --spec $SPEC'"
   },
   "dependencies": {
-    "@auth/mongodb-adapter": "^3.11.1",
+    "@auth/mongodb-adapter": "^3.11.3",
     "@heroicons/react": "^2.2.0",
     "@vercel/firewall": "^1.2.1",
     "bcryptjs": "^3.0.3",
     "dexie": "^4.3.0",
     "dexie-react-hooks": "^4.2.0",
-    "mongoose": "^9.0.0",
-    "next": "16.2.9",
+    "mongoose": "^9.10.1",
+    "next": "16.3.5",
     "next-auth": "^5.0.0-beta.30",
-    "postcss": "^8.5.15",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "postcss": "^8.5.28",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "web-push": "^3.6.7",
@@ -46,13 +46,13 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/web-push": "^3.6.4",
     "baseline-browser-mapping": "^2.10.22",
     "cypress": "^15.12.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint": "10.10.0",
+    "eslint-config-next": "16.3.5",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "start-server-and-test": "^2.1.5",
@@ -61,7 +61,7 @@
     "typescript": "^5"
   },
   "overrides": {
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }

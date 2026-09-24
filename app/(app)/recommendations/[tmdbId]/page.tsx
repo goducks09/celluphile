@@ -1,18 +1,20 @@
+import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { getMovieFromCatalog } from '@/app/lib/data';
 import ItemDetail from '@/app/ui/item-detail';
 import RecommendationDetailActions from '@/app/ui/recommendation-detail-actions';
+import ItemDetailSkeleton from '@/app/ui/item-detail-skeleton';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Recommendation Details | Celluphile',
 };
 
-export default async function RecommendationDetailPage({
-    params,
-}: {
-    params: Promise<{ tmdbId: string }>;
-}) {
+export const instant = {
+    unstable_samples: [{ params: { tmdbId: '550' } }],
+};
+
+async function RecommendationDetailContent({ params }: { params: Promise<{ tmdbId: string }> }) {
     const { tmdbId: rawId } = await params;
     const tmdbId = parseInt(rawId, 10);
 
@@ -30,5 +32,17 @@ export default async function RecommendationDetailPage({
         <ItemDetail movie={result.movie} mode="recommendation">
             <RecommendationDetailActions movie={result.movie} />
         </ItemDetail>
+    );
+}
+
+export default function RecommendationDetailPage({
+    params,
+}: {
+    params: Promise<{ tmdbId: string }>;
+}) {
+    return (
+        <Suspense fallback={<ItemDetailSkeleton />}>
+            <RecommendationDetailContent params={params} />
+        </Suspense>
     );
 }

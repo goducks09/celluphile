@@ -1,12 +1,14 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getRecommendations } from '@/app/lib/data';
-import { auth } from '@/auth';
+import { getSession } from '@/app/lib/auth-session';
 import AddRecommendationButton from '@/app/ui/add-recommendation-button';
 import { getTMDBImageUrl } from '@/app/lib/tmdb-utils';
+import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 
-export default async function RecommendationsPage() {
-    const session = await auth();
+async function RecommendationsContent() {
+    const session = await getSession();
     if (!session?.user?.id) {
         return <div className="text-center p-8 mt-4 rounded shadow" style={{ background: 'var(--background-card)', color: 'var(--foreground-muted)' }}>Please log in to view recommendations.</div>;
     }
@@ -15,7 +17,7 @@ export default async function RecommendationsPage() {
 
     if (!success) {
         return (
-            <div className="w-full max-w-4xl mx-auto my-8 p-8 rounded-lg shadow text-center" style={{ background: 'var(--background-card)' }}>
+            <div className="w-full max-w-4xl mx-auto p-8 rounded-lg shadow text-center" style={{ background: 'var(--background-card)' }}>
                 <h3 className="text-xl font-medium text-red-400">Unable to load recommendations</h3>
                 <p className="mt-2" style={{ color: 'var(--foreground-muted)' }}>
                     {message || 'Something went wrong. Please try again later.'}
@@ -29,7 +31,7 @@ export default async function RecommendationsPage() {
 
     if (!movies || movies.length === 0) {
         return (
-            <div className="w-full max-w-4xl mx-auto my-12 p-12 rounded-lg shadow-sm flex flex-col items-center text-center" style={{ background: 'var(--background-card)', border: '1px solid var(--border)' }}>
+            <div className="w-full max-w-4xl mx-auto p-12 rounded-lg shadow-sm flex flex-col items-center text-center" style={{ background: 'var(--background-card)', border: '1px solid var(--border)' }}>
                 <div className="bg-indigo-900/30 p-4 rounded-full mb-6">
                     <span className="text-indigo-400 text-4xl">✨</span>
                 </div>
@@ -48,6 +50,53 @@ export default async function RecommendationsPage() {
     }
 
     return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-2 sm:px-4">
+            {movies.map((movie, index) => (
+                <div key={movie.tmdbId} className="relative flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
+                    {movie.poster ? (
+                        <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] block" prefetch={false} aria-label={`View ${movie.title} details`}>
+                            <Image
+                                src={getTMDBImageUrl(movie.poster, 'w500')}
+                                alt={`${movie.title} poster`}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                                className="object-cover"
+                                loading={index < 4 ? 'eager' : 'lazy'}
+                            />
+                        </Link>
+                    ) : (
+                        <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] flex items-center justify-center text-xs sm:text-base text-center p-2 block" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }} prefetch={false} aria-label={`View ${movie.title} details`}>
+                            No Poster Available
+                        </Link>
+                    )}
+
+                    <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 className="font-bold text-sm sm:text-lg leading-tight mb-1 line-clamp-2">
+                                {movie.title}
+                            </h3>
+                            <p className="text-[10px] sm:text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
+                                {movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}
+                                {movie.releaseDate && movie.runtime ? ' • ' : ''}
+                                {movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
+                            </p>
+                            {movie.genres && movie.genres.length > 0 && (
+                                <p className="text-[10px] sm:text-xs mb-1 sm:mb-2 font-medium text-indigo-400 line-clamp-1">
+                                    {movie.genres.join(', ')}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <AddRecommendationButton movie={movie} />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default function RecommendationsPage() {
+    return (
         <div className="w-full max-w-6xl mx-auto my-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 px-4 gap-4">
                 <div className="flex items-center gap-3">
@@ -60,49 +109,9 @@ export default async function RecommendationsPage() {
                     </div>
                 </div>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-2 sm:px-4">
-                {movies.map((movie, index) => (
-                    <div key={movie.tmdbId} className="relative flex flex-col rounded-lg shadow overflow-hidden transition-transform hover:scale-105" style={{ background: 'var(--background-card)' }}>
-                        {movie.poster ? (
-                            <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] block" prefetch={false} aria-label={`View ${movie.title} details`}>
-                                <Image
-                                    src={getTMDBImageUrl(movie.poster, 'w500')}
-                                    alt={`${movie.title} poster`}
-                                    fill
-                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                                    className="object-cover"
-                                    loading={index < 4 ? 'eager' : 'lazy'}
-                                />
-                            </Link>
-                        ) : (
-                            <Link href={`/recommendations/${movie.tmdbId}`} className="relative w-full aspect-[2/3] flex items-center justify-center text-xs sm:text-base text-center p-2 block" style={{ background: 'var(--background-input)', color: 'var(--foreground-muted)' }} prefetch={false} aria-label={`View ${movie.title} details`}>
-                                No Poster Available
-                            </Link>
-                        )}
-
-                        <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
-                            <div>
-                                <h3 className="font-bold text-sm sm:text-lg leading-tight mb-1 line-clamp-2">
-                                    {movie.title}
-                                </h3>
-                                <p className="text-[10px] sm:text-sm mb-1 font-medium" style={{ color: 'var(--foreground-muted)' }}>
-                                    {movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}
-                                    {movie.releaseDate && movie.runtime ? ' • ' : ''}
-                                    {movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
-                                </p>
-                                {movie.genres && movie.genres.length > 0 && (
-                                    <p className="text-[10px] sm:text-xs mb-1 sm:mb-2 font-medium text-indigo-400 line-clamp-1">
-                                        {movie.genres.join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        <AddRecommendationButton movie={movie} />
-                    </div>
-                ))}
-            </div>
+            <Suspense fallback={<MoviesSkeleton count={10} />}>
+                <RecommendationsContent />
+            </Suspense>
         </div>
     );
 }

@@ -8,7 +8,11 @@ import { getNotificationPreferences } from '../../app/lib/data';
 import { auth } from '@/auth';
 
 jest.mock('web-push');
-jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
+jest.mock('next/cache', () => ({
+    revalidatePath: jest.fn(),
+    cacheLife: jest.fn(),
+    cacheTag: jest.fn(),
+}));
 
 jest.mock('next/server', () => ({
     NextResponse: {

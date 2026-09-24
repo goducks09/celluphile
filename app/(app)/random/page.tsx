@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { getRandomMovie } from '@/app/lib/data';
 import RandomMovieClient from '@/app/ui/random-movie';
+import { MoviesSkeleton } from '@/app/ui/movies-skeleton';
 
-export default async function RandomPage() {
+export async function RandomMovieContent() {
     const response = await getRandomMovie();
 
     if (!response.success || !response.movie) {
@@ -25,12 +27,18 @@ export default async function RandomPage() {
         );
     }
 
+    return <RandomMovieClient initialMovie={response.movie} />;
+}
+
+export default function RandomPage() {
     return (
         <div className="w-full max-w-2xl mx-auto py-4 md:py-6 px-4 flex flex-col items-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center flex items-center justify-center gap-3">
                 <span className="text-3xl md:text-4xl">🎲</span> Random Movie
             </h2>
-            <RandomMovieClient initialMovie={response.movie} />
+            <Suspense fallback={<MoviesSkeleton count={1} />}>
+                <RandomMovieContent />
+            </Suspense>
         </div>
     );
 }
