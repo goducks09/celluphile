@@ -7,6 +7,7 @@ Rather than adapting an existing service, I chose to build this application from
 4. **Randomizer:** Randomly select a movie from the library to solve decision fatigue.
 
 ## From Expo React Native to Next.js PWA
+
 The first iteration of this project was built as a native mobile application using React Native and the Expo ecosystem. Expo allowed for rapid initial prototyping and platform-agnostic development. However, as the project matured, two critical friction points emerged:
 - **Distribution Constraints:** Apple’s App Store policies made sharing or viewing the app publicly via Expo Go difficult without maintaining paid developer accounts and going through formal app store distribution pipelines.
 - **Platform Limitations:** While mobile access is critical for checking a physical library on the go, I found myself wanting to access the library on different devices.
@@ -14,6 +15,7 @@ The first iteration of this project was built as a native mobile application usi
 To achieve a true "installable" native mobile feel alongside a web-friendly desktop experience, I chose to refactor the application into a **Progressive Web App (PWA)** built on **Next.js**. Next.js was chosen because it allowed me to consolidate the frontend and backend into a single framework while still supporting the app-like experience I wanted from a PWA.
 
 ### Modern Web Architecture
+
 By moving to Next.js, the architecture evolved from a mobile client to a cohesive, type-safe full-stack application:
 - **Framework & Logic:** Next.js Server Actions handle data mutations, while Server Components enforce secure, database-level operations in pages.
 - **Database & Deduplication:** MongoDB was chosen in the initial iteration of the project to gain familiarity with a database that was used in a common web stack (MERN). I decided to use it again to reuse the existing model structure and database operations. Additionally, I found that MongoDB natively supported vector indexing and search, which I was interested in using for an AI recommendation system. While the schema I designed is relational, MongoDB met the technical needs of the application and avoided taking on the overhead of switching to a new solution. The data model consists of a `User` document that links to user-specific entries (`UserMovie` and `UserWishlist`), which in turn reference a shared `Movie` details collection. This ensures that even if multiple users add *The Matrix*, movie metadata is stored only once.
@@ -21,19 +23,8 @@ By moving to Next.js, the architecture evolved from a mobile client to a cohesiv
 - **Offline Data Sync:** Client-side caching utilizes **Dexie** (a wrapper around IndexedDB). When a connection is lost, mutations are recorded in an IndexedDB sync queue. Once network connectivity is restored, a component sends the requests sequentially via Server Actions.
 
 ## Exploring Agentic Coding
-Beyond rebuilding the application, a secondary goal was to experiment with **agentic coding**. Could I develop a quality application using agents? To find out, I utilized Gemini and Claude models in Google's Antigravity IDE. I still wanted to maintain ultimate authority over the output and decisions, so I operated Antigravity in "sandbox" mode, requiring it to request permission for each change. To structure the development process, I designed a strict multi-model development loop:
 
-```mermaid
-graph TD
-    A[1. Architecture Outline] --> B[2. Planning Model]
-    B --> C[3. Human Review & Feedback]
-    C --> D[4. Implementer Model]
-    D --> E[5. Original Model Code Review]
-    E --> F[6. Human Review & Adjustments]
-    F --> G[7. Implementer Updates Code]
-    G --> H[8. Commit & Repeat]
-    H --> A
-```
+Beyond rebuilding the application, a secondary goal was to experiment with **agentic coding**. Could I develop a quality application using agents? To find out, I utilized Gemini and Claude models in Google's Antigravity IDE. I still wanted to maintain ultimate authority over the output and decisions, so I operated Antigravity in "sandbox" mode, requiring it to request permission for each change. To structure the development process, I designed a strict multi-model development loop:
 
 1. **Architecture Outline:** I began by planning out and defining the core functionality of the application, data schemas, and tech stack.
 2. **Implementation Plan:** A primary LLM model was tasked with writing a detailed, step-by-step implementation plan based on my outline.
@@ -44,6 +35,7 @@ graph TD
 7. **Commit & Iterate:** Once verified, the changes were committed, and the loop began again for the next feature.
 
 ### Specialized Agent Skills
+
 To ensure the AI agents produced secure, quality code, I configured specialized **agent skills and rules** that acted as guardrails for:
 * **Framework Best Practices:** Enforcing clean React Server Component boundaries, proper handling of asynchronous APIs, and Next.js route conventions.
 * **OWASP Security Standards:** Ensuring strict input validation (via Zod), preventing rate-limiting vulnerabilities, protecting API routes, and validating user access permissions.
@@ -51,6 +43,7 @@ To ensure the AI agents produced secure, quality code, I configured specialized 
 * **Testing Guidelines:** Standardizing Jest unit tests and Cypress end-to-end integration tests to verify critical flows.
 
 ## AI Recommendations
+
 An additional area I wanted to focus on during this migration was an **AI Recommendation System**. I wanted a solution that incorporated artificial intelligence without intense implementation work or inference costs. The result is a system that blends content similarity with collaborative signals and can be run locally on my hardware.
 
 ### 1. Content-Based Similarity Search
@@ -73,6 +66,7 @@ This is a feature that I'm considering adding in the future. It would add anothe
 * Finally, a **genre diversity pass** groups recommendation candidates and caps any single genre at 40% of the final list to prevent clustering.
 
 ## Takeaways
+
 Overall, I found this project to be rewarding and informative. The app functions well and has provided me with immediate utility. Additionally, I was able to spend significant time understanding the strengths and limitations of agentic coding tools. A few of my thoughts on AI-assisted coding:
 * Helpful in brainstorming solutions to features or problems a developer has identified
 * Great at reviewing human-written code to identify inefficiencies, vulnerabilities, and bugs
