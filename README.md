@@ -1,7 +1,3 @@
-# Evolution of a Movie Library App
-
-## Origin and Philosophy
-
 When deciding to build a cataloging application for my movie library, the motivation was rooted in a personal problem. As my physical collection has grown and I've added in digital items, keeping track of exactly what I own, and in which format (physical Blu-ray vs. digital 4K UHD), has become cumbersome. I wanted a simple, single source of truth to manage my library and help me decide what to watch.
 
 Rather than adapting an existing service, I chose to build this application from the ground up to tailor the UX to my exact preferences. The initial design, prototyped in Adobe XD, was centered around four core pillars:
@@ -10,10 +6,7 @@ Rather than adapting an existing service, I chose to build this application from
 3. **Library Search:** Instantly query within a user's library.
 4. **Randomizer:** Randomly select a movie from the library to solve decision fatigue.
 
----
-
 ## From Expo React Native to Next.js PWA
-
 The first iteration of this project was built as a native mobile application using React Native and the Expo ecosystem. Expo allowed for rapid initial prototyping and platform-agnostic development. However, as the project matured, two critical friction points emerged:
 - **Distribution Constraints:** Apple’s App Store policies made sharing or viewing the app publicly via Expo Go difficult without maintaining paid developer accounts and going through formal app store distribution pipelines.
 - **Platform Limitations:** While mobile access is critical for checking a physical library on the go, I found myself wanting to access the library on different devices.
@@ -27,10 +20,7 @@ By moving to Next.js, the architecture evolved from a mobile client to a cohesiv
 - **PWA Service Worker:** A custom service worker (`public/sw.js`) handles asset pre-caching and offline page fallback.
 - **Offline Data Sync:** Client-side caching utilizes **Dexie** (a wrapper around IndexedDB). When a connection is lost, mutations are recorded in an IndexedDB sync queue. Once network connectivity is restored, a component sends the requests sequentially via Server Actions.
 
----
-
 ## Exploring Agentic Coding
-
 Beyond rebuilding the application, a secondary goal was to experiment with **agentic coding**. Could I develop a quality application using agents? To find out, I utilized Gemini and Claude models in Google's Antigravity IDE. I still wanted to maintain ultimate authority over the output and decisions, so I operated Antigravity in "sandbox" mode, requiring it to request permission for each change. To structure the development process, I designed a strict multi-model development loop:
 
 ```mermaid
@@ -60,10 +50,7 @@ To ensure the AI agents produced secure, quality code, I configured specialized 
 * **Code Review & Quality:** Spotting anti-patterns, redundant queries, and ensuring proper error handling.
 * **Testing Guidelines:** Standardizing Jest unit tests and Cypress end-to-end integration tests to verify critical flows.
 
----
-
 ## AI Recommendations
-
 An additional area I wanted to focus on during this migration was an **AI Recommendation System**. I wanted a solution that incorporated artificial intelligence without intense implementation work or inference costs. The result is a system that blends content similarity with collaborative signals and can be run locally on my hardware.
 
 ### 1. Content-Based Similarity Search
@@ -84,7 +71,6 @@ This is a feature that I'm considering adding in the future. It would add anothe
 * At runtime, these collaborative candidates are merged with the content-based vector search results.
 * A blending algorithm dynamically weights these two tracks: libraries with fewer than 15 movies lean heavily on collaborative ratings to help with the "cold start" problem, while larger libraries balance content-based vectors to provide highly specific recommendations.
 * Finally, a **genre diversity pass** groups recommendation candidates and caps any single genre at 40% of the final list to prevent clustering.
-
 
 ## Takeaways
 Overall, I found this project to be rewarding and informative. The app functions well and has provided me with immediate utility. Additionally, I was able to spend significant time understanding the strengths and limitations of agentic coding tools. A few of my thoughts on AI-assisted coding:
